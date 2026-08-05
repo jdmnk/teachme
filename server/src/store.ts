@@ -31,6 +31,7 @@ export interface Thread {
   id: string;
   topic: string;
   title: string;
+  modelId?: string;
   createdAt: string;
   updatedAt: string;
   sections: Section[];

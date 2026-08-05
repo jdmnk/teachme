@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Thread, api } from '../lib/api';
+import { ModelOption, Thread, api } from '../lib/api';
 
 const PLANNING_LINES = [
   'Planning your series…',
@@ -32,9 +32,12 @@ export function Home({ openThread }: { openThread: (id: string) => void }) {
   const [topic, setTopic] = useState('');
   const [creating, setCreating] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [models, setModels] = useState<ModelOption[]>([]);
+  const [modelId, setModelId] = useState(() => localStorage.getItem('tm_model') || 'default');
 
   useEffect(() => {
     api.threads().then(setThreads).catch(() => setThreads([]));
+    api.models().then(setModels).catch(() => {});
   }, []);
 
   async function create(e: React.FormEvent) {
@@ -45,7 +48,7 @@ export function Home({ openThread }: { openThread: (id: string) => void }) {
     setCreating(true);
     setErr(null);
     try {
-      const thread = await api.createThread(t);
+      const thread = await api.createThread(t, modelId);
       openThread(thread.id);
     } catch (error) {
       setErr((error as Error).message);
@@ -78,6 +81,25 @@ export function Home({ openThread }: { openThread: (id: string) => void }) {
           {creating ? <span className="spinner" /> : '→'}
         </button>
       </form>
+      {models.length > 0 && (
+        <label className="model-row">
+          <span>Model</span>
+          <select
+            value={modelId}
+            onChange={(e) => {
+              setModelId(e.target.value);
+              localStorage.setItem('tm_model', e.target.value);
+            }}
+            disabled={creating}
+          >
+            {models.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.label} — {m.note}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       {creating && <PlanningOverlay topic={topic.trim()} />}
       {err && <p className="error-text">{err}</p>}
 

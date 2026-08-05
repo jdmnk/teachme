@@ -1,12 +1,48 @@
 /**
- * Content generation via OpenRouter. Gemini Flash keeps the outline call
- * fast enough that listening can start within seconds of typing a topic.
+ * Content generation, dispatched per thread model. Two engines:
+ * - openrouter: plain chat completion (Gemini Flash default keeps the
+ *   outline call fast enough that listening starts within seconds)
+ * - codex: shells out to `codex exec` headless, billing the flat Codex
+ *   subscription instead of tokens; the final message lands in -o file
  * All calls ask for JSON and parse leniently (models love code fences).
  */
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import fsp from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import { config } from './config.js';
-import type { Section, Steering, Thread } from './store.js';
+import { ModelOption, resolveModel } from './models.js';
+import type { Thread } from './store.js';
 
-async function chatJSON(system: string, user: string): Promise<any> {
+const execFileP = promisify(execFile);
+
+async function codexText(prompt: string, model: string, effort: string): Promise<string> {
+  const out = path.join(os.tmpdir(), `codex-${Date.now()}-${Math.random().toString(36).slice(2)}.txt`);
+  try {
+    const pending = execFileP(
+      'codex',
+      [
+        'exec',
+        '-m', model,
+        '-c', `model_reasoning_effort=${effort}`,
+        '-s', 'read-only',
+        '--skip-git-repo-check',
+        '-o', out,
+        prompt,
+      ],
+      { timeout: 300_000, cwd: os.tmpdir(), maxBuffer: 16 * 1024 * 1024 },
+    );
+    // codex appends piped stdin to the prompt and blocks until EOF — close it
+    pending.child.stdin?.end();
+    await pending;
+    return await fsp.readFile(out, 'utf8');
+  } finally {
+    void fsp.rm(out, { force: true }).catch(() => {});
+  }
+}
+
+async function openrouterText(system: string, user: string, model: string): Promise<string> {
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -16,7 +52,7 @@ async function chatJSON(system: string, user: string): Promise<any> {
       'X-Title': 'TeachMe',
     },
     body: JSON.stringify({
-      model: config.model,
+      model,
       messages: [
         { role: 'system', content: system },
         { role: 'user', content: user },
@@ -27,7 +63,18 @@ async function chatJSON(system: string, user: string): Promise<any> {
   });
   if (!res.ok) throw new Error(`openrouter ${res.status}: ${(await res.text()).slice(0, 300)}`);
   const body = (await res.json()) as any;
-  const text: string = body.choices?.[0]?.message?.content ?? '';
+  return body.choices?.[0]?.message?.content ?? '';
+}
+
+async function chatJSON(opt: ModelOption, system: string, user: string): Promise<any> {
+  const text =
+    opt.engine === 'codex'
+      ? await codexText(
+          `${system}\n\n${user}\n\nReturn ONLY the JSON object — no prose, no code fences, no tool use.`,
+          opt.model,
+          opt.effort ?? 'low',
+        )
+      : await openrouterText(system, user, opt.model);
   const match = text.match(/\{[\s\S]*\}/);
   if (!match) throw new Error(`no JSON in model output: ${text.slice(0, 200)}`);
   return JSON.parse(match[0]);
@@ -37,8 +84,10 @@ const OUTLINE_SYSTEM = `You plan spoken audio learning series — think of a sha
 
 export async function generateOutline(
   topic: string,
+  modelId?: string,
 ): Promise<{ title: string; sections: { title: string; focus: string }[] }> {
   const out = await chatJSON(
+    resolveModel(modelId),
     OUTLINE_SYSTEM,
     `Topic requested by the listener: "${topic}"
 
@@ -73,6 +122,7 @@ export async function generateScript(
   const isLast = idx === thread.sections.length - 1;
 
   const out = await chatJSON(
+    resolveModel(thread.modelId),
     SCRIPT_SYSTEM,
     `Series: "${thread.title}" — about: ${thread.topic}
 Full outline:
@@ -108,6 +158,7 @@ export async function replanRemaining(
     .map((s, i) => `${i + 1}. ${s.title}${s.summary ? ` — ${s.summary}` : ''}`)
     .join('\n');
   const out = await chatJSON(
+    resolveModel(thread.modelId),
     OUTLINE_SYSTEM,
     `An audio learning series "${thread.title}" about "${thread.topic}" is mid-flight. Sections already heard (fixed, do not change):
 ${kept}

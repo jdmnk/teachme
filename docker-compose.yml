@@ -4,8 +4,14 @@ services:
     container_name: teachme-app
     restart: unless-stopped
     env_file: .env
+    environment:
+      # the codex engine shells out to the host's statically-linked codex
+      # binary, billing the existing Codex subscription instead of tokens
+      CODEX_HOME: /codex-home
     volumes:
       - teachme-data:/data
+      - /home/jure/.local/bin/codex:/usr/local/bin/codex:ro
+      - /home/jure/.codex:/codex-home
     # no host ports: only Caddy reaches the app, over the shared edge network
     networks: [edge]
 

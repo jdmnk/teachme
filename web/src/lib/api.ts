@@ -10,10 +10,18 @@ export interface Section {
   error?: string;
 }
 
+export interface ModelOption {
+  id: string;
+  label: string;
+  note: string;
+  engine: 'openrouter' | 'codex';
+}
+
 export interface Thread {
   id: string;
   topic: string;
   title: string;
+  modelId?: string;
   createdAt: string;
   updatedAt: string;
   sections: Section[];
@@ -46,10 +54,11 @@ export const api = {
   me: () => req<{ ok: boolean }>('/api/me'),
   login: (code: string) =>
     req<{ ok: boolean }>('/api/login', { method: 'POST', body: JSON.stringify({ code }) }),
+  models: () => req<ModelOption[]>('/api/models'),
   threads: () => req<Thread[]>('/api/threads'),
   thread: (id: string) => req<Thread>(`/api/threads/${id}`),
-  createThread: (topic: string) =>
-    req<Thread>('/api/threads', { method: 'POST', body: JSON.stringify({ topic }) }),
+  createThread: (topic: string, modelId: string) =>
+    req<Thread>('/api/threads', { method: 'POST', body: JSON.stringify({ topic, modelId }) }),
   deleteThread: (id: string) => req<{ ok: boolean }>(`/api/threads/${id}`, { method: 'DELETE' }),
   prepare: (id: string, idx: number) =>
     req<Section>(`/api/threads/${id}/sections/${idx}/prepare`, { method: 'POST' }),
