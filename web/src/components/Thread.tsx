@@ -79,9 +79,11 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [threadId, idx, retry, thread ? 1 : 0]);
 
-  // ---- audio element events
+  // ---- audio element events; the <audio> only mounts once the thread has
+  // loaded (early-return render), so bail until the ref exists
   useEffect(() => {
-    const a = audioRef.current!;
+    const a = audioRef.current;
+    if (!a) return;
     const onLoaded = () => {
       setDuration(a.duration);
       a.playbackRate = Number(localStorage.getItem('tm_speed')) || 1;
