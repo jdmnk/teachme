@@ -16,6 +16,7 @@ export interface Section {
   focus: string;
   status: SectionStatus;
   summary?: string;
+  script?: string;
   audioFile?: string;
   chars?: number;
   error?: string;

@@ -6,6 +6,7 @@ export interface Section {
   focus: string;
   status: SectionStatus;
   summary?: string;
+  script?: string;
   audioFile?: string;
   error?: string;
 }
@@ -63,6 +64,11 @@ export const api = {
   deleteThread: (id: string) => req<{ ok: boolean }>(`/api/threads/${id}`, { method: 'DELETE' }),
   prepare: (id: string, idx: number) =>
     req<Section>(`/api/threads/${id}/sections/${idx}/prepare`, { method: 'POST' }),
+  renameSection: (id: string, idx: number, title: string) =>
+    req<Section>(`/api/threads/${id}/sections/${idx}/title`, {
+      method: 'POST',
+      body: JSON.stringify({ title }),
+    }),
   audioUrl: (id: string, idx: number) => `/api/threads/${id}/sections/${idx}/audio`,
   savePosition: (id: string, section: number, time: number) =>
     req<{ ok: boolean }>(`/api/threads/${id}/position`, {

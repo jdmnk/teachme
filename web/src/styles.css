@@ -439,17 +439,97 @@ input {
 }
 
 .section {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 10px;
   border-radius: 12px;
-  cursor: pointer;
   color: var(--dim);
 }
 
-.section:active {
+.section-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 2px 10px 10px;
+  cursor: pointer;
+}
+
+.section-row:active {
   background: var(--surface);
+}
+
+.section-expand {
+  flex: none;
+  font-size: 0.75rem;
+  padding: 8px 12px;
+}
+
+.section-panel {
+  margin: 0 10px 10px 44px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.section-script {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--text);
+  white-space: pre-wrap;
+  max-height: 45vh;
+  overflow-y: auto;
+}
+
+.section-script.dim {
+  color: var(--dim);
+}
+
+.rename-btn {
+  align-self: flex-start;
+  color: var(--dim);
+  font-size: 0.82rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 12px;
+}
+
+.rename-btn:active {
+  background: var(--surface-2);
+}
+
+.rename-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.rename-row input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 12px;
+  outline: none;
+  font-size: 0.9rem;
+}
+
+.rename-row input:focus {
+  border-color: var(--accent);
+}
+
+.rename-row button[type='submit'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 9px 14px;
+  font-size: 0.85rem;
+}
+
+.rename-row button[type='submit']:disabled {
+  opacity: 0.4;
 }
 
 .section.current {

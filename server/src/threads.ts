@@ -42,6 +42,7 @@ function ensureSection(thread: Thread, idx: number): Promise<void> {
       const file = `${thread.id}-${section.id}.mp3`;
       await fsp.writeFile(path.join(audioDir, file), audio);
       section.summary = summary;
+      section.script = script;
       section.audioFile = file;
       section.chars = script.length;
       section.status = 'ready';
@@ -148,6 +149,19 @@ threads.get('/:id/sections/:idx/audio', (req, res) => {
     headers: { 'Content-Type': 'audio/mpeg', 'Cache-Control': 'private, max-age=86400' },
   });
 });
+
+threads.post('/:id/sections/:idx/title', wrap(async (req, res) => {
+  const thread = withThread(req, res);
+  if (!thread) return;
+  const section = thread.sections[Number(req.params.idx)];
+  if (!section) return res.status(404).json({ error: 'no such section' });
+  const title = String(req.body?.title ?? '').trim();
+  if (!title) return res.status(400).json({ error: 'title required' });
+  section.title = title;
+  touch(thread);
+  await save();
+  res.json(section);
+}));
 
 threads.post('/:id/position', wrap(async (req, res) => {
   const thread = withThread(req, res);

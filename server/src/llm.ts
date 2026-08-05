@@ -93,7 +93,9 @@ export async function generateOutline(
 
 Design the series. Arc: start with a hook/overview episode that makes the topic feel alive and maps the terrain, then fundamentals, then depth, then applications or common misconceptions, and end with a compact recap that cements the mental model. 6 to 9 sections; each roughly 3 minutes of speech.
 
-Return JSON: {"title": "<short series title, no 'Episode'/'Series' words>", "sections": [{"title": "<short section title>", "focus": "<1 sentence: exactly what this section covers and why it comes here>"}]}`,
+Section titles must be plainly descriptive, like textbook headings: state exactly what the section covers so a listener scanning the list knows what's inside (e.g. "How attention weighs each word", not "Inside the Language Machine"). No clever, poetic, editorial or book-chapter titles.
+
+Return JSON: {"title": "<short series title, no 'Episode'/'Series' words>", "sections": [{"title": "<plain descriptive section title>", "focus": "<1 sentence: exactly what this section covers and why it comes here>"}]}`,
   );
   if (!out.title || !Array.isArray(out.sections) || out.sections.length < 2)
     throw new Error('bad outline shape');
@@ -165,7 +167,7 @@ ${kept}
 
 The listener just said: "${instruction}"
 
-Replan only the REMAINING sections (2 to 7 of them) so the series honors this. If it's a question, the very next section should answer it directly, then continue the arc. Keep the series coherent and still end with a recap.
+Replan only the REMAINING sections (2 to 7 of them) so the series honors this. If it's a question, the very next section should answer it directly, then continue the arc. Keep the series coherent and still end with a recap. Section titles must be plainly descriptive, like textbook headings — no clever or editorial titles.
 
 Return JSON: {"sections": [{"title": "...", "focus": "..."}]}`,
   );

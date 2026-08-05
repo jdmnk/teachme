@@ -24,6 +24,8 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
   const [steering, setSteering] = useState(false);
   const [steered, setSteered] = useState(false);
   const [listening, setListening] = useState(false);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [titleDraft, setTitleDraft] = useState<string | null>(null);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const wantPlay = useRef(false);
@@ -261,28 +263,100 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
               s.status,
               i < idx ? 'past' : '',
             ].join(' ')}
-            onClick={() => {
-              if (i === idx) return;
-              wantPlay.current = true;
-              setIdx(i);
-            }}
           >
-            <span className="section-num">
-              {i === idx && playing ? (
-                <span className="eq">
-                  <i />
-                  <i />
-                  <i />
-                </span>
-              ) : (
-                i + 1
-              )}
-            </span>
-            <span className="section-title">{s.title}</span>
-            <span className="section-state">
-              {s.status === 'generating' && <span className="dot pulse" />}
-              {s.status === 'error' && '!'}
-            </span>
+            <div
+              className="section-row"
+              onClick={() => {
+                if (i === idx) return;
+                wantPlay.current = true;
+                setIdx(i);
+              }}
+            >
+              <span className="section-num">
+                {i === idx && playing ? (
+                  <span className="eq">
+                    <i />
+                    <i />
+                    <i />
+                  </span>
+                ) : (
+                  i + 1
+                )}
+              </span>
+              <span className="section-title">{s.title}</span>
+              <span className="section-state">
+                {s.status === 'generating' && <span className="dot pulse" />}
+                {s.status === 'error' && '!'}
+              </span>
+              <button
+                className="ghost-btn section-expand"
+                aria-label="Show text"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTitleDraft(null);
+                  setExpanded(expanded === s.id ? null : s.id);
+                }}
+              >
+                {expanded === s.id ? '▴' : '▾'}
+              </button>
+            </div>
+            {expanded === s.id && (
+              <div className="section-panel">
+                {titleDraft !== null ? (
+                  <form
+                    className="rename-row"
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      const title = titleDraft.trim();
+                      if (!title) return;
+                      const updated = await api.renameSection(threadId, i, title).catch(() => null);
+                      if (updated) {
+                        setThread((t) =>
+                          t
+                            ? {
+                                ...t,
+                                sections: t.sections.map((x) =>
+                                  x.id === s.id ? { ...x, title } : x,
+                                ),
+                              }
+                            : t,
+                        );
+                      }
+                      setTitleDraft(null);
+                    }}
+                  >
+                    <input
+                      autoFocus
+                      value={titleDraft}
+                      onChange={(e) => setTitleDraft(e.target.value)}
+                      enterKeyHint="done"
+                    />
+                    <button type="submit" disabled={!titleDraft.trim()}>
+                      Save
+                    </button>
+                    <button type="button" className="ghost-btn" onClick={() => setTitleDraft(null)}>
+                      Cancel
+                    </button>
+                  </form>
+                ) : (
+                  <button className="rename-btn" onClick={() => setTitleDraft(s.title)}>
+                    ✎ Rename
+                  </button>
+                )}
+                {s.script ? (
+                  <p className="section-script">{s.script}</p>
+                ) : s.status === 'ready' ? (
+                  <p className="section-script dim">
+                    Text wasn't stored for sections generated before this update — only newer
+                    sections keep their transcript.
+                  </p>
+                ) : (
+                  <p className="section-script dim">
+                    Not written yet. Planned focus: {s.focus}
+                  </p>
+                )}
+              </div>
+            )}
           </li>
         ))}
       </ol>
