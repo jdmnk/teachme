@@ -4,7 +4,7 @@ import path from 'node:path';
 import { assertConfig, config } from './config.js';
 import { isAuthed, login, requireAuth } from './auth.js';
 import { threads } from './threads.js';
-import { MODELS } from './models.js';
+import { modelsWithPrices } from './models.js';
 
 assertConfig();
 
@@ -17,7 +17,9 @@ app.get('/api/me', (req, res) => {
   if (isAuthed(req)) return res.json({ ok: true });
   res.status(401).json({ error: 'unauthorized' });
 });
-app.get('/api/models', requireAuth, (_req, res) => res.json(MODELS));
+app.get('/api/models', requireAuth, (_req, res, next) => {
+  modelsWithPrices().then((m) => res.json(m), next);
+});
 app.use('/api/threads', requireAuth, threads);
 
 // express 4 sync error handling misses async throws; routes that can throw

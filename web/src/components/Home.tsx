@@ -34,6 +34,7 @@ export function Home({ openThread }: { openThread: (id: string) => void }) {
   const [err, setErr] = useState<string | null>(null);
   const [models, setModels] = useState<ModelOption[]>([]);
   const [modelId, setModelId] = useState(() => localStorage.getItem('tm_model') || 'default');
+  const [showModel, setShowModel] = useState(false);
 
   useEffect(() => {
     api.threads().then(setThreads).catch(() => setThreads([]));
@@ -82,23 +83,38 @@ export function Home({ openThread }: { openThread: (id: string) => void }) {
         </button>
       </form>
       {models.length > 0 && (
-        <label className="model-row">
-          <span>Model</span>
-          <select
-            value={modelId}
-            onChange={(e) => {
-              setModelId(e.target.value);
-              localStorage.setItem('tm_model', e.target.value);
-            }}
-            disabled={creating}
+        <div className="model-box">
+          <button
+            type="button"
+            className="model-toggle"
+            onClick={() => setShowModel((s) => !s)}
           >
-            {models.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.label} — {m.note}
-              </option>
-            ))}
-          </select>
-        </label>
+            Model: <strong>{(models.find((m) => m.id === modelId) ?? models[0]).label}</strong>
+            <span className="chev">{showModel ? '▴' : '▾'}</span>
+          </button>
+          {showModel && (
+            <div className="model-list">
+              {models.map((m) => (
+                <button
+                  type="button"
+                  key={m.id}
+                  className={`model-option ${m.id === modelId ? 'selected' : ''}`}
+                  onClick={() => {
+                    setModelId(m.id);
+                    localStorage.setItem('tm_model', m.id);
+                    setShowModel(false);
+                  }}
+                >
+                  <span className="model-name">{m.label}</span>
+                  <span className="model-meta">
+                    {m.note}
+                    {m.price ? ` · ${m.price} tokens` : ''}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       )}
       {creating && <PlanningOverlay topic={topic.trim()} />}
       {err && <p className="error-text">{err}</p>}

@@ -29,3 +29,36 @@ export const MODELS: ModelOption[] = [
 export function resolveModel(id?: string): ModelOption {
   return MODELS.find((m) => m.id === id) ?? MODELS[0];
 }
+
+/**
+ * Annotate the catalog with OpenRouter list prices (per-M tokens), cached
+ * for an hour. Codex models carry no price — they bill the flat plan.
+ * Never throws: on fetch failure the catalog is served without prices.
+ */
+let priceCache: { at: number; map: Map<string, string> } | null = null;
+
+const fmtUsd = (n: number) => `$${parseFloat(n.toFixed(2))}`;
+
+async function openrouterPrices(): Promise<Map<string, string>> {
+  if (priceCache && Date.now() - priceCache.at < 3600_000) return priceCache.map;
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/models');
+    const data = ((await res.json()) as any).data ?? [];
+    const map = new Map<string, string>();
+    for (const m of data) {
+      const prompt = Number(m.pricing?.prompt) * 1e6;
+      const completion = Number(m.pricing?.completion) * 1e6;
+      if (prompt > 0 || completion > 0)
+        map.set(m.id, `${fmtUsd(prompt)}/${fmtUsd(completion)} per M`);
+    }
+    priceCache = { at: Date.now(), map };
+  } catch {}
+  return priceCache?.map ?? new Map();
+}
+
+export async function modelsWithPrices(): Promise<(ModelOption & { price?: string })[]> {
+  const prices = await openrouterPrices();
+  return MODELS.map((m) =>
+    m.engine === 'openrouter' && prices.has(m.model) ? { ...m, price: prices.get(m.model) } : m,
+  );
+}

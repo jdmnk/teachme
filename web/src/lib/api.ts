@@ -15,6 +15,7 @@ export interface ModelOption {
   label: string;
   note: string;
   engine: 'openrouter' | 'codex';
+  price?: string;
 }
 
 export interface Thread {
