@@ -1,0 +1,17 @@
+services:
+  app:
+    build: .
+    container_name: teachme-app
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - teachme-data:/data
+    # no host ports: only Caddy reaches the app, over the shared edge network
+    networks: [edge]
+
+networks:
+  edge:
+    external: true
+
+volumes:
+  teachme-data:

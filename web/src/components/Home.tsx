@@ -1,0 +1,96 @@
+import { useEffect, useState } from 'react';
+import { Thread, api } from '../lib/api';
+
+export function Home({ openThread }: { openThread: (id: string) => void }) {
+  const [threads, setThreads] = useState<Thread[] | null>(null);
+  const [topic, setTopic] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.threads().then(setThreads).catch(() => setThreads([]));
+  }, []);
+
+  async function create(e: React.FormEvent) {
+    e.preventDefault();
+    const t = topic.trim();
+    if (!t || creating) return;
+    setCreating(true);
+    setErr(null);
+    try {
+      const thread = await api.createThread(t);
+      openThread(thread.id);
+    } catch (error) {
+      setErr((error as Error).message);
+      setCreating(false);
+    }
+  }
+
+  async function remove(id: string) {
+    if (!confirm('Delete this series?')) return;
+    await api.deleteThread(id).catch(() => {});
+    setThreads((ts) => ts?.filter((t) => t.id !== id) ?? null);
+  }
+
+  return (
+    <div className="home">
+      <div className="wordmark home-wordmark">
+        Teach<span>Me</span>
+      </div>
+
+      <form className="topic-form" onSubmit={create}>
+        <input
+          type="text"
+          placeholder="What do you want to learn?"
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+          disabled={creating}
+          enterKeyHint="go"
+        />
+        <button type="submit" disabled={!topic.trim() || creating} aria-label="Start">
+          {creating ? <span className="spinner" /> : '→'}
+        </button>
+      </form>
+      {creating && <p className="hint pulse">Planning your series…</p>}
+      {err && <p className="error-text">{err}</p>}
+
+      {threads && threads.length > 0 && (
+        <div className="thread-list">
+          <h2>Continue listening</h2>
+          {threads.map((t) => {
+            const done = t.position.section + 1;
+            return (
+              <div key={t.id} className="thread-card" onClick={() => openThread(t.id)}>
+                <div className="thread-card-main">
+                  <div className="thread-card-title">{t.title}</div>
+                  <div className="thread-card-sub">
+                    Section {done} of {t.sections.length}
+                  </div>
+                  <div className="progress">
+                    <div
+                      className="progress-fill"
+                      style={{ width: `${(done / t.sections.length) * 100}%` }}
+                    />
+                  </div>
+                </div>
+                <button
+                  className="ghost-btn"
+                  aria-label="Delete"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    remove(t.id);
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {threads && threads.length === 0 && !creating && (
+        <p className="hint">Type anything — the fall of Rome, how transformers work, wine tasting basics — and press go.</p>
+      )}
+    </div>
+  );
+}

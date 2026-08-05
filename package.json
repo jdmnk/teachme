@@ -1,0 +1,13 @@
+{
+  "name": "teachme",
+  "private": true,
+  "workspaces": [
+    "server",
+    "web"
+  ],
+  "scripts": {
+    "dev:server": "tsx watch server/src/index.ts",
+    "build": "npm run build --workspace=web",
+    "start": "tsx server/src/index.ts"
+  }
+}
