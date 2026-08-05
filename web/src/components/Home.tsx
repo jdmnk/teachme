@@ -1,6 +1,32 @@
 import { useEffect, useState } from 'react';
 import { Thread, api } from '../lib/api';
 
+const PLANNING_LINES = [
+  'Planning your series…',
+  'Sketching the arc…',
+  'Naming the sections…',
+  'Cueing the narrator…',
+];
+
+function PlanningOverlay({ topic }: { topic: string }) {
+  const [line, setLine] = useState(0);
+  useEffect(() => {
+    const iv = setInterval(() => setLine((l) => (l + 1) % PLANNING_LINES.length), 2200);
+    return () => clearInterval(iv);
+  }, []);
+  return (
+    <div className="overlay">
+      <span className="eq eq-big">
+        <i />
+        <i />
+        <i />
+      </span>
+      <div className="overlay-topic">“{topic}”</div>
+      <div className="overlay-line pulse">{PLANNING_LINES[line]}</div>
+    </div>
+  );
+}
+
 export function Home({ openThread }: { openThread: (id: string) => void }) {
   const [threads, setThreads] = useState<Thread[] | null>(null);
   const [topic, setTopic] = useState('');
@@ -15,6 +41,7 @@ export function Home({ openThread }: { openThread: (id: string) => void }) {
     e.preventDefault();
     const t = topic.trim();
     if (!t || creating) return;
+    (document.activeElement as HTMLElement | null)?.blur?.();
     setCreating(true);
     setErr(null);
     try {
@@ -51,7 +78,7 @@ export function Home({ openThread }: { openThread: (id: string) => void }) {
           {creating ? <span className="spinner" /> : '→'}
         </button>
       </form>
-      {creating && <p className="hint pulse">Planning your series…</p>}
+      {creating && <PlanningOverlay topic={topic.trim()} />}
       {err && <p className="error-text">{err}</p>}
 
       {threads && threads.length > 0 && (

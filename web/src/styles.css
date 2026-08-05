@@ -182,6 +182,46 @@ input {
   }
 }
 
+/* ---------- planning overlay ---------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: rgba(14, 15, 19, 0.94);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 32px;
+  text-align: center;
+}
+
+.overlay-topic {
+  font-size: 1.15rem;
+  font-weight: 650;
+  line-height: 1.4;
+  max-width: 30ch;
+}
+
+.overlay-line {
+  color: var(--accent);
+  font-size: 0.95rem;
+}
+
+.eq-big {
+  height: 34px;
+  gap: 5px;
+}
+
+.eq-big i {
+  width: 7px;
+  border-radius: 3px;
+}
+
 /* ---------- home ---------- */
 
 .home {
