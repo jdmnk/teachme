@@ -59,7 +59,9 @@ for (const t of db.threads)
 let writeChain: Promise<void> = Promise.resolve();
 
 export function save(): Promise<void> {
-  writeChain = writeChain.then(async () => {
+  // recover from a failed write: chain on the settled previous attempt so
+  // one error doesn't poison every save after it
+  writeChain = writeChain.catch(() => {}).then(async () => {
     const tmp = dbFile + '.tmp';
     await fsp.writeFile(tmp, JSON.stringify(db, null, 2));
     await fsp.rename(tmp, dbFile);
