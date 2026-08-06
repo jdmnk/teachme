@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Thread, api, beaconPosition } from '../lib/api';
+import { activeSentence, sentenceStartTime, splitSentences } from '../lib/sentences';
+import { Chevron } from './Chevron';
 
 const SPEEDS = [1, 1.25, 1.5, 1.75, 2];
 
@@ -26,6 +28,9 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
   const [listening, setListening] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [titleDraft, setTitleDraft] = useState<string | null>(null);
+  const [showSections, setShowSections] = useState(false);
+  const activeSentenceRef = useRef<HTMLSpanElement | null>(null);
+  const scrollSuppress = useRef(0);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const wantPlay = useRef(false);
@@ -238,8 +243,25 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
     rec.start();
   }
 
+  const section = thread?.sections[idx];
+  const sentences = useMemo(
+    () => (section?.script ? splitSentences(section.script) : []),
+    [section?.script],
+  );
+  const activeIdx = sentences.length ? activeSentence(sentences, time, duration) : 0;
+
+  // follow the reading position, but yield to a user who is scrolling around
+  useEffect(() => {
+    if (!playing || Date.now() < scrollSuppress.current) return;
+    activeSentenceRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [activeIdx, playing]);
+
+  function seekToSentence(i: number) {
+    const a = audioRef.current!;
+    if (duration) a.currentTime = sentenceStartTime(sentences, i, duration);
+  }
+
   if (!thread) return <div className="center-fill" />;
-  const section = thread.sections[idx];
 
   return (
     <div className="thread">
@@ -253,6 +275,14 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
         </div>
       </header>
 
+      <button className="sections-toggle" onClick={() => setShowSections((s) => !s)}>
+        Sections
+        <span className="sections-count">
+          {idx + 1} / {thread.sections.length}
+        </span>
+        <Chevron open={showSections} />
+      </button>
+      {showSections && (
       <ol className="sections">
         {thread.sections.map((s, i) => (
           <li
@@ -297,7 +327,7 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
                   setExpanded(expanded === s.id ? null : s.id);
                 }}
               >
-                {expanded === s.id ? '▴' : '▾'}
+                <Chevron open={expanded === s.id} />
               </button>
             </div>
             {expanded === s.id && (
@@ -360,6 +390,40 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
           </li>
         ))}
       </ol>
+      )}
+
+      <div
+        className="reading"
+        onWheel={() => (scrollSuppress.current = Date.now() + 5000)}
+        onTouchMove={() => (scrollSuppress.current = Date.now() + 5000)}
+      >
+        {sentences.length > 0 ? (
+          <p className="reading-text">
+            {sentences.map((sn, i) => (
+              <span
+                key={i}
+                ref={i === activeIdx ? activeSentenceRef : undefined}
+                className={`sentence${i === activeIdx ? ' active' : i < activeIdx ? ' read' : ''}`}
+                onClick={() => seekToSentence(i)}
+              >
+                {sn}
+              </span>
+            ))}
+          </p>
+        ) : preparing ? (
+          <>
+            <p className="reading-hint pulse">Writing &amp; recording this section…</p>
+            {section?.focus && <p className="reading-hint">{section.focus}</p>}
+          </>
+        ) : section?.status === 'ready' ? (
+          <p className="reading-hint">
+            Text wasn't stored for sections generated before transcripts shipped — the audio still
+            plays fine.
+          </p>
+        ) : (
+          <p className="reading-hint">{section?.focus ?? ''}</p>
+        )}
+      </div>
 
       {steered && <div className="toast">Got it — the series bends from the next section on.</div>}
 

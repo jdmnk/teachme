@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ModelOption, Thread, api } from '../lib/api';
+import { Chevron } from './Chevron';
 
 const PLANNING_LINES = [
   'Planning your series…',
@@ -90,7 +91,7 @@ export function Home({ openThread }: { openThread: (id: string) => void }) {
             onClick={() => setShowModel((s) => !s)}
           >
             Model: <strong>{(models.find((m) => m.id === modelId) ?? models[0]).label}</strong>
-            <span className="chev">{showModel ? '▴' : '▾'}</span>
+            <Chevron open={showModel} />
           </button>
           {showModel && (
             <div className="model-list">

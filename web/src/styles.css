@@ -289,8 +289,15 @@ input {
   font-weight: 600;
 }
 
-.chev {
-  font-size: 0.7rem;
+.chev-svg {
+  flex: none;
+  display: block;
+  opacity: 0.8;
+  transition: transform 0.18s ease;
+}
+
+.chev-svg.open {
+  transform: rotate(180deg);
 }
 
 .model-list {
@@ -431,11 +438,72 @@ input {
   white-space: nowrap;
 }
 
+.sections-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 18px;
+  color: var(--dim);
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.sections-toggle .chev-svg {
+  margin-left: auto;
+}
+
+.sections-count {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
 .sections {
-  flex: 1;
+  max-height: 40vh;
   overflow-y: auto;
   list-style: none;
-  padding: 10px 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  flex: none;
+}
+
+.reading {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px 22px 28px;
+}
+
+.reading-text {
+  font-size: 1.03rem;
+  line-height: 1.75;
+  color: var(--dim);
+}
+
+.sentence {
+  cursor: pointer;
+  border-radius: 5px;
+  padding: 1px 2px;
+  margin: -1px -2px;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+.sentence.read {
+  color: #b6bac6;
+}
+
+.sentence.active {
+  color: var(--text);
+  background: rgba(240, 180, 91, 0.16);
+  box-shadow: 0 0 0 2px rgba(240, 180, 91, 0.16);
+}
+
+.reading-hint {
+  color: var(--dim);
+  font-size: 0.92rem;
+  line-height: 1.6;
+  margin-bottom: 10px;
 }
 
 .section {
