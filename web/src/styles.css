@@ -731,13 +731,24 @@ input {
 
 .steer button[type='submit'],
 .mic {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   flex: none;
   border-radius: 50%;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mic {
+  background: var(--danger);
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 14px rgba(229, 105, 95, 0.35);
+}
+
+.mic:active {
+  filter: brightness(1.1);
 }
 
 .steer button[type='submit'] {

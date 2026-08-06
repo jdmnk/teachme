@@ -437,9 +437,18 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
           type="button"
           className={`mic ${listening ? 'listening' : ''}`}
           onClick={toggleMic}
-          aria-label="Speak"
+          aria-label={listening ? 'Stop recording' : 'Speak'}
         >
-          {listening ? '■' : '🎙'}
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" aria-hidden="true">
+            {listening ? (
+              <rect x="7" y="7" width="10" height="10" rx="2" />
+            ) : (
+              <>
+                <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3z" />
+                <path d="M17 11a1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V20h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-2.07A7 7 0 0 1 5 11a1 1 0 1 1 2 0 5 5 0 0 0 10 0z" />
+              </>
+            )}
+          </svg>
         </button>
         <input
           type="text"
