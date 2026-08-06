@@ -406,7 +406,7 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
                 className={`sentence${i === activeIdx ? ' active' : i < activeIdx ? ' read' : ''}`}
                 onClick={() => seekToSentence(i)}
               >
-                {sn}
+                {sn.trim()}
               </span>
             ))}
           </p>

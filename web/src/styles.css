@@ -475,28 +475,35 @@ input {
   padding: 20px 22px 28px;
 }
 
+/* lyrics-style: one bold block per sentence, dim → read → active */
 .reading-text {
-  font-size: 1.03rem;
-  line-height: 1.75;
-  color: var(--dim);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 30vh;
 }
 
 .sentence {
+  display: block;
   cursor: pointer;
-  border-radius: 5px;
-  padding: 1px 2px;
-  margin: -1px -2px;
-  transition: background 0.25s ease, color 0.25s ease;
+  font-size: 1.22rem;
+  font-weight: 650;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+  color: rgba(233, 231, 226, 0.32);
+  padding: 8px 12px;
+  margin: 0 -12px;
+  border-radius: 14px;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 .sentence.read {
-  color: #b6bac6;
+  color: rgba(233, 231, 226, 0.6);
 }
 
 .sentence.active {
   color: var(--text);
-  background: rgba(240, 180, 91, 0.16);
-  box-shadow: 0 0 0 2px rgba(240, 180, 91, 0.16);
+  background: rgba(240, 180, 91, 0.13);
 }
 
 .reading-hint {
