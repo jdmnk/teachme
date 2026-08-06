@@ -501,6 +501,13 @@ input {
   color: rgba(233, 231, 226, 0.6);
 }
 
+@media (hover: hover) {
+  .sentence:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(233, 231, 226, 0.75);
+  }
+}
+
 .sentence.active {
   color: var(--text);
   background: rgba(240, 180, 91, 0.13);

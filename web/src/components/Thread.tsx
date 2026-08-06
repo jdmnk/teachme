@@ -258,7 +258,12 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
 
   function seekToSentence(i: number) {
     const a = audioRef.current!;
-    if (duration) a.currentTime = sentenceStartTime(sentences, i, duration);
+    if (!duration) return;
+    // land a hair inside the sentence: the element rounds currentTime down
+    // to a frame boundary, which would map the highlight to the previous one
+    const t = Math.min(sentenceStartTime(sentences, i, duration) + 0.15, duration);
+    a.currentTime = t;
+    setTime(t);
   }
 
   if (!thread) return <div className="center-fill" />;
