@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Thread, api, beaconPosition } from '../lib/api';
-import { activeSentence, sentenceStartTime, splitSentences } from '../lib/sentences';
+import {
+  activeFromTimings,
+  activeSentence,
+  sentenceStartTime,
+  splitSentences,
+} from '../lib/sentences';
 import { Chevron } from './Chevron';
 
 const SPEEDS = [1, 1.25, 1.5, 1.75, 2];
@@ -268,7 +273,15 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
     () => (section?.script ? splitSentences(section.script) : []),
     [section?.script],
   );
-  const activeIdx = sentences.length ? activeSentence(sentences, time, duration) : 0;
+  // exact per-sentence timings ship with newly generated sections; older
+  // ones fall back to the proportional estimate
+  const timings =
+    section?.timings && section.timings.length === sentences.length ? section.timings : null;
+  const activeIdx = sentences.length
+    ? timings
+      ? activeFromTimings(timings, time)
+      : activeSentence(sentences, time, duration)
+    : 0;
 
   // follow the reading position, but yield to a user who is scrolling around
   useEffect(() => {
@@ -281,7 +294,8 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
     if (!duration) return;
     // land a hair inside the sentence: the element rounds currentTime down
     // to a frame boundary, which would map the highlight to the previous one
-    const t = Math.min(sentenceStartTime(sentences, i, duration) + 0.15, duration);
+    const start = timings ? timings[i] : sentenceStartTime(sentences, i, duration);
+    const t = Math.min(start + (timings ? 0.05 : 0.15), duration);
     a.currentTime = t;
     setTime(t);
   }

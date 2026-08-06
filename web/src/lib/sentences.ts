@@ -4,8 +4,16 @@
  * clip's duration by sentence character count tracks real position within a
  * second or two — plenty for follow-along highlighting and tap-to-seek.
  */
+// MUST stay in sync with server/src/sentences.ts — stored timings are
+// matched to this split by index.
 export function splitSentences(text: string): string[] {
   return text.match(/[^.!?]+[.!?]+["')\]]*\s*|[^.!?]+$/g) ?? [text];
+}
+
+export function activeFromTimings(timings: number[], time: number): number {
+  let i = 0;
+  while (i + 1 < timings.length && time >= timings[i + 1]) i++;
+  return i;
 }
 
 export function activeSentence(sentences: string[], time: number, duration: number): number {
