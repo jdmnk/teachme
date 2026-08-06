@@ -76,12 +76,10 @@ function speakChunk(
 }
 
 /**
- * Align word events to the script's sentence split: match each spoken word
- * to its char position by ordered search (robust against SSML escaping and
- * tokenizer quirks), then take the first word at/after each sentence start.
+ * Match each spoken word to its char position in the raw script by ordered
+ * search (robust against SSML escaping and tokenizer quirks).
  */
-function sentenceTimings(script: string, words: WordEvent[]): number[] {
-  const sentences = splitSentences(script);
+function matchEvents(script: string, words: WordEvent[]): { char: number; sec: number }[] {
   const events: { char: number; sec: number }[] = [];
   let ptr = 0;
   for (const w of words) {
@@ -90,6 +88,12 @@ function sentenceTimings(script: string, words: WordEvent[]): number[] {
     events.push({ char: at, sec: w.sec });
     ptr = at + w.text.length;
   }
+  return events;
+}
+
+/** First word at/after each sentence start = that sentence's start time. */
+function sentenceTimings(script: string, events: { char: number; sec: number }[]): number[] {
+  const sentences = splitSentences(script);
   const timings: number[] = [];
   let charStart = 0;
   let ei = 0;
@@ -102,7 +106,9 @@ function sentenceTimings(script: string, words: WordEvent[]): number[] {
   return timings;
 }
 
-export async function speak(text: string): Promise<{ audio: Buffer; timings: number[] }> {
+export async function speak(
+  text: string,
+): Promise<{ audio: Buffer; timings: number[]; words: [number, number][] }> {
   const buffers: Buffer[] = [];
   const allWords: WordEvent[] = [];
   let base = 0;
@@ -112,5 +118,10 @@ export async function speak(text: string): Promise<{ audio: Buffer; timings: num
     for (const w of r.words) allWords.push({ text: w.text, sec: base + w.sec });
     base += r.durationSec;
   }
-  return { audio: Buffer.concat(buffers), timings: sentenceTimings(text, allWords) };
+  const events = matchEvents(text, allWords);
+  return {
+    audio: Buffer.concat(buffers),
+    timings: sentenceTimings(text, events),
+    words: events.map((e) => [e.char, Math.round(e.sec * 100) / 100]),
+  };
 }

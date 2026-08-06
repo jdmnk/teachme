@@ -38,12 +38,13 @@ function ensureSection(thread: Thread, idx: number): Promise<void> {
     await save();
     try {
       const { script, summary } = await generateScript(thread, idx);
-      const { audio, timings } = await speak(script);
+      const { audio, timings, words } = await speak(script);
       const file = `${thread.id}-${section.id}.mp3`;
       await fsp.writeFile(path.join(audioDir, file), audio);
       section.summary = summary;
       section.script = script;
       section.timings = timings;
+      section.words = words;
       section.audioFile = file;
       section.chars = script.length;
       section.status = 'ready';

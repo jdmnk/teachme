@@ -8,6 +8,7 @@ export interface Section {
   summary?: string;
   script?: string;
   timings?: number[];
+  words?: [number, number][];
   audioFile?: string;
   error?: string;
 }

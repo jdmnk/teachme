@@ -513,6 +513,15 @@ input {
   background: rgba(240, 180, 91, 0.13);
 }
 
+.word {
+  transition: color 0.12s ease, text-shadow 0.12s ease;
+}
+
+.sentence.active .word.on {
+  color: var(--accent);
+  text-shadow: 0 0 18px rgba(240, 180, 91, 0.45);
+}
+
 .reading-hint {
   color: var(--dim);
   font-size: 0.92rem;

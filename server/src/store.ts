@@ -18,6 +18,8 @@ export interface Section {
   summary?: string;
   script?: string;
   timings?: number[];
+  /** [charIndexIntoScript, seconds] per spoken word, for word-level karaoke */
+  words?: [number, number][];
   audioFile?: string;
   chars?: number;
   error?: string;

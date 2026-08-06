@@ -282,6 +282,54 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
       ? activeFromTimings(timings, time)
       : activeSentence(sentences, time, duration)
     : 0;
+  const words = section?.words ?? null;
+  let activeWord = -1;
+  if (words) for (let i = 0; i < words.length && time >= words[i][1]; i++) activeWord = i;
+  const sentenceStarts = useMemo(() => {
+    const starts: number[] = [];
+    let acc = 0;
+    for (const s of sentences) {
+      starts.push(acc);
+      acc += s.length;
+    }
+    return starts;
+  }, [sentences]);
+
+  // word-level updates need finer clock than the ~4Hz timeupdate event
+  useEffect(() => {
+    if (!playing || !words) return;
+    const iv = setInterval(() => {
+      const a = audioRef.current;
+      if (a) setTime(a.currentTime);
+    }, 100);
+    return () => clearInterval(iv);
+  }, [playing, words != null ? 1 : 0]);
+
+  // active sentence rendered word-by-word; the current word lights up
+  function renderSentence(i: number) {
+    const raw = sentences[i];
+    const text = raw.trim();
+    if (i !== activeIdx || !words) return text;
+    const lead = raw.length - raw.trimStart().length;
+    const start = sentenceStarts[i] + lead;
+    const parts: React.ReactNode[] = [];
+    let cursor = 0;
+    for (let wi = 0; wi < words.length; wi++) {
+      const rel = words[wi][0] - start;
+      if (rel < cursor || rel >= text.length) continue;
+      const match = text.slice(rel).match(/^\S+/);
+      if (!match) continue;
+      if (rel > cursor) parts.push(text.slice(cursor, rel));
+      parts.push(
+        <span key={wi} className={`word${wi === activeWord ? ' on' : ''}`}>
+          {match[0]}
+        </span>,
+      );
+      cursor = rel + match[0].length;
+    }
+    parts.push(text.slice(cursor));
+    return parts;
+  }
 
   // follow the reading position, but yield to a user who is scrolling around
   useEffect(() => {
@@ -445,7 +493,7 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
                 className={`sentence${i === activeIdx ? ' active' : i < activeIdx ? ' read' : ''}`}
                 onClick={() => seekToSentence(i)}
               >
-                {sn.trim()}
+                {renderSentence(i)}
               </span>
             ))}
           </p>
