@@ -169,6 +169,26 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
     else a.pause();
   }, []);
 
+  // ---- desktop: space toggles play/pause (unless typing or on a control)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code !== 'Space') return;
+      const t = e.target as HTMLElement;
+      if (
+        t.tagName === 'INPUT' ||
+        t.tagName === 'TEXTAREA' ||
+        t.tagName === 'BUTTON' ||
+        t.tagName === 'SELECT' ||
+        t.isContentEditable
+      )
+        return;
+      e.preventDefault();
+      toggle();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [toggle]);
+
   // ---- lock screen / headphone controls
   useEffect(() => {
     if (!('mediaSession' in navigator) || !thread) return;
