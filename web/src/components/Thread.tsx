@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ApiError, ModelOption, Thread, api, beaconPosition } from '../lib/api';
+import { ApiError, LevelOption, ModelOption, Thread, api, beaconPosition } from '../lib/api';
 import {
   activeFromTimings,
   activeSentence,
@@ -36,9 +36,11 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
   const [showSections, setShowSections] = useState(false);
   const [showText, setShowText] = useState(() => localStorage.getItem('tm_show_text') !== '0');
   const [models, setModels] = useState<ModelOption[]>([]);
+  const [levels, setLevels] = useState<LevelOption[]>([]);
 
   useEffect(() => {
     api.models().then(setModels).catch(() => {});
+    api.levels().then(setLevels).catch(() => {});
   }, []);
   const activeSentenceRef = useRef<HTMLSpanElement | null>(null);
   const scrollSuppress = useRef(0);
@@ -403,6 +405,11 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
               <span className="thread-model">
                 {models.find((m) => m.id === (thread.modelId ?? 'default'))?.label ??
                   thread.modelId}
+              </span>
+            )}
+            {thread.level && thread.level !== 'balanced' && (
+              <span className="thread-model">
+                {levels.find((l) => l.id === thread.level)?.label ?? thread.level}
               </span>
             )}
             <span className="thread-topic">{thread.topic}</span>

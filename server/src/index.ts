@@ -5,6 +5,7 @@ import { assertConfig, config } from './config.js';
 import { isAuthed, login, requireAuth } from './auth.js';
 import { threads } from './threads.js';
 import { modelsWithPrices } from './models.js';
+import { LEVELS } from './levels.js';
 
 assertConfig();
 
@@ -20,6 +21,9 @@ app.get('/api/me', (req, res) => {
 app.get('/api/models', requireAuth, (_req, res, next) => {
   modelsWithPrices().then((m) => res.json(m), next);
 });
+app.get('/api/levels', requireAuth, (_req, res) =>
+  res.json(LEVELS.map(({ id, label, note }) => ({ id, label, note }))),
+);
 app.use('/api/threads', requireAuth, threads);
 
 // express 4 sync error handling misses async throws; routes that can throw

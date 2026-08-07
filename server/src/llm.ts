@@ -13,6 +13,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { config } from './config.js';
 import { ModelOption, resolveModel } from './models.js';
+import { resolveLevel } from './levels.js';
 import type { Thread } from './store.js';
 
 const execFileP = promisify(execFile);
@@ -108,11 +109,13 @@ const OUTLINE_SYSTEM = `You plan spoken audio learning series — think of a sha
 export async function generateOutline(
   topic: string,
   modelId?: string,
+  level?: string,
 ): Promise<{ title: string; sections: { title: string; focus: string }[] }> {
   return chatJSON(
     resolveModel(modelId),
     OUTLINE_SYSTEM,
     `Topic requested by the listener: "${topic}"
+Listener familiarity: ${resolveLevel(level).prompt}
 
 Design the series. Arc: start with a hook/overview episode that makes the topic feel alive and maps the terrain, then fundamentals, then depth, then applications or common misconceptions, and end with a compact recap that cements the mental model. 6 to 9 sections; each roughly 3 minutes of speech.
 
@@ -152,6 +155,7 @@ export async function generateScript(
     resolveModel(thread.modelId),
     SCRIPT_SYSTEM,
     `Series: "${thread.title}" — about: ${thread.topic}
+Listener familiarity: ${resolveLevel(thread.level).prompt}
 Full outline:
 ${outline}
 
@@ -189,7 +193,8 @@ export async function replanRemaining(
   return chatJSON(
     resolveModel(thread.modelId),
     OUTLINE_SYSTEM,
-    `An audio learning series "${thread.title}" about "${thread.topic}" is mid-flight. Sections already heard (fixed, do not change):
+    `An audio learning series "${thread.title}" about "${thread.topic}" is mid-flight. Listener familiarity: ${resolveLevel(thread.level).prompt}
+Sections already heard (fixed, do not change):
 ${kept}
 
 The listener just said: "${instruction}"

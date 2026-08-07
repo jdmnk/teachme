@@ -271,6 +271,50 @@ input {
   opacity: 0.4;
 }
 
+.level-box {
+  padding: 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.level-label {
+  color: var(--dim);
+  font-size: 0.85rem;
+}
+
+.level-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 15px;
+  font-size: 0.88rem;
+  color: var(--dim);
+  background: var(--surface);
+}
+
+.chip.selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.chip:disabled {
+  opacity: 0.5;
+}
+
+.level-note {
+  color: var(--dim);
+  font-size: 0.78rem;
+  font-style: italic;
+}
+
 .model-box {
   padding: 0 4px;
 }

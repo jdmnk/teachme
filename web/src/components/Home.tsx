@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ModelOption, Thread, api } from '../lib/api';
+import { LevelOption, ModelOption, Thread, api } from '../lib/api';
 import { Chevron } from './Chevron';
 
 const PLANNING_LINES = [
@@ -36,10 +36,13 @@ export function Home({ openThread }: { openThread: (id: string) => void }) {
   const [models, setModels] = useState<ModelOption[]>([]);
   const [modelId, setModelId] = useState(() => localStorage.getItem('tm_model') || 'default');
   const [showModel, setShowModel] = useState(false);
+  const [levels, setLevels] = useState<LevelOption[]>([]);
+  const [level, setLevel] = useState('balanced');
 
   useEffect(() => {
     api.threads().then(setThreads).catch(() => setThreads([]));
     api.models().then(setModels).catch(() => {});
+    api.levels().then(setLevels).catch(() => {});
   }, []);
 
   async function create(e: React.FormEvent) {
@@ -50,7 +53,7 @@ export function Home({ openThread }: { openThread: (id: string) => void }) {
     setCreating(true);
     setErr(null);
     try {
-      const thread = await api.createThread(t, modelId);
+      const thread = await api.createThread(t, modelId, level);
       openThread(thread.id);
     } catch (error) {
       setErr((error as Error).message);
@@ -83,6 +86,26 @@ export function Home({ openThread }: { openThread: (id: string) => void }) {
           {creating ? <span className="spinner" /> : '→'}
         </button>
       </form>
+      {levels.length > 0 && (
+        <div className="level-box">
+          <div className="level-label">How well do you know the topic?</div>
+          <div className="level-chips">
+            {levels.map((l) => (
+              <button
+                type="button"
+                key={l.id}
+                className={`chip${l.id === level ? ' selected' : ''}`}
+                onClick={() => setLevel(l.id)}
+                disabled={creating}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+          <div className="level-note">{levels.find((l) => l.id === level)?.note}</div>
+        </div>
+      )}
+
       {models.length > 0 && (
         <div className="model-box">
           <button

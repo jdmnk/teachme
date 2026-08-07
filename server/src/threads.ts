@@ -14,6 +14,7 @@ import {
 } from './store.js';
 import { generateOutline, generateScript, replanRemaining } from './llm.js';
 import { resolveModel } from './models.js';
+import { resolveLevel } from './levels.js';
 import { speak } from './tts.js';
 
 /**
@@ -84,13 +85,15 @@ threads.post('/', wrap(async (req, res) => {
   const topic = String(req.body?.topic ?? '').trim();
   if (!topic) return res.status(400).json({ error: 'topic required' });
   const modelId = resolveModel(req.body?.modelId).id;
-  const outline = await generateOutline(topic, modelId);
+  const level = resolveLevel(req.body?.level).id;
+  const outline = await generateOutline(topic, modelId, level);
   const now = new Date().toISOString();
   const thread: Thread = {
     id: newId(),
     topic,
     title: outline.title,
     modelId,
+    level,
     createdAt: now,
     updatedAt: now,
     steering: [],

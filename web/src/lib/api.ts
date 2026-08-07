@@ -21,11 +21,18 @@ export interface ModelOption {
   price?: string;
 }
 
+export interface LevelOption {
+  id: string;
+  label: string;
+  note: string;
+}
+
 export interface Thread {
   id: string;
   topic: string;
   title: string;
   modelId?: string;
+  level?: string;
   createdAt: string;
   updatedAt: string;
   sections: Section[];
@@ -59,10 +66,14 @@ export const api = {
   login: (code: string) =>
     req<{ ok: boolean }>('/api/login', { method: 'POST', body: JSON.stringify({ code }) }),
   models: () => req<ModelOption[]>('/api/models'),
+  levels: () => req<LevelOption[]>('/api/levels'),
   threads: () => req<Thread[]>('/api/threads'),
   thread: (id: string) => req<Thread>(`/api/threads/${id}`),
-  createThread: (topic: string, modelId: string) =>
-    req<Thread>('/api/threads', { method: 'POST', body: JSON.stringify({ topic, modelId }) }),
+  createThread: (topic: string, modelId: string, level: string) =>
+    req<Thread>('/api/threads', {
+      method: 'POST',
+      body: JSON.stringify({ topic, modelId, level }),
+    }),
   deleteThread: (id: string) => req<{ ok: boolean }>(`/api/threads/${id}`, { method: 'DELETE' }),
   prepare: (id: string, idx: number) =>
     req<Section>(`/api/threads/${id}/sections/${idx}/prepare`, { method: 'POST' }),
