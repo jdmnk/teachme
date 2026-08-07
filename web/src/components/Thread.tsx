@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Thread, api, beaconPosition } from '../lib/api';
+import { ApiError, Thread, api, beaconPosition } from '../lib/api';
 import {
   activeFromTimings,
   activeSentence,
@@ -67,29 +67,63 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
   useEffect(() => {
     if (!thread) return;
     let cancelled = false;
+    let attempts = 0;
     const a = audioRef.current!;
+    const url = api.audioUrl(threadId, idx);
     a.pause();
     setPreparing(true);
     setPrepError(null);
     setTime(0);
     setDuration(0);
-    api.prepare(threadId, idx)
-      .then(() => {
-        if (cancelled) return;
-        setPreparing(false);
-        a.src = api.audioUrl(threadId, idx);
-        a.load();
-      })
-      .catch((e) => {
-        if (cancelled) return;
-        setPreparing(false);
-        setPrepError((e as Error).message);
-      });
+    const loadAudio = () => {
+      if (a.src.endsWith(url)) return;
+      a.src = url;
+      a.load();
+    };
+    const attempt = () => {
+      api.prepare(threadId, idx)
+        .then(() => {
+          if (cancelled) return;
+          setPreparing(false);
+          loadAudio();
+        })
+        .catch((e) => {
+          if (cancelled) return;
+          attempts++;
+          // network drops (Safari's "Load failed") and gateway errors are
+          // transient — the server keeps generating even if the connection
+          // died, so retry quietly; real server errors surface immediately
+          const transient = !(e instanceof ApiError) || e.status >= 502;
+          if (transient && attempts < 4) {
+            setTimeout(() => !cancelled && attempt(), 2500);
+          } else {
+            setPreparing(false);
+            setPrepError((e as Error).message);
+          }
+        });
+    };
+    attempt();
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [threadId, idx, retry, thread ? 1 : 0]);
+
+  // ---- safety net: the 4s thread poll sees the section turn ready even if
+  // every prepare request's connection died — load the audio from status
+  const polledStatus = thread?.sections[idx]?.status;
+  useEffect(() => {
+    if (polledStatus !== 'ready' || (!preparing && !prepError)) return;
+    const a = audioRef.current!;
+    const url = api.audioUrl(threadId, idx);
+    setPreparing(false);
+    setPrepError(null);
+    if (!a.src.endsWith(url)) {
+      a.src = url;
+      a.load();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [polledStatus, preparing, prepError]);
 
   // ---- audio element events; the <audio> only mounts once the thread has
   // loaded (early-return render), so bail until the ref exists
