@@ -10,6 +10,34 @@ import { Chevron } from './Chevron';
 
 const SPEEDS = [1, 1.25, 1.5, 1.75, 2];
 
+function SkipIcon({ amount, forward }: { amount: number; forward?: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" width="27" height="27" aria-hidden="true">
+      <g
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        transform={forward ? 'scale(-1 1) translate(-24 0)' : undefined}
+      >
+        <path d="M12 4A8 8 0 1 0 20 12" />
+        <path d="M15.2 1.8 12 4l3.3 2.2" />
+      </g>
+      <text
+        x="12"
+        y="15.4"
+        textAnchor="middle"
+        fontSize="7.6"
+        fontWeight="700"
+        fill="currentColor"
+      >
+        {amount}
+      </text>
+    </svg>
+  );
+}
+
 function fmt(t: number): string {
   if (!Number.isFinite(t)) return '0:00';
   const m = Math.floor(t / 60);
@@ -216,6 +244,13 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
     else a.pause();
   }, []);
 
+  const skip = useCallback((delta: number) => {
+    const a = audioRef.current!;
+    const max = Number.isFinite(a.duration) ? a.duration : Infinity;
+    a.currentTime = Math.max(0, Math.min(a.currentTime + delta, max));
+    setTime(a.currentTime);
+  }, []);
+
   // ---- desktop: space toggles play/pause (unless typing or on a control)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -249,13 +284,9 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
     navigator.mediaSession.setActionHandler('pause', toggle);
     navigator.mediaSession.setActionHandler('nexttrack', next);
     navigator.mediaSession.setActionHandler('previoustrack', prev);
-    navigator.mediaSession.setActionHandler('seekbackward', () => {
-      audioRef.current!.currentTime = Math.max(0, audioRef.current!.currentTime - 15);
-    });
-    navigator.mediaSession.setActionHandler('seekforward', () => {
-      audioRef.current!.currentTime += 30;
-    });
-  }, [thread, idx, next, prev, toggle]);
+    navigator.mediaSession.setActionHandler('seekbackward', () => skip(-15));
+    navigator.mediaSession.setActionHandler('seekforward', () => skip(30));
+  }, [thread, idx, next, prev, toggle, skip]);
 
   function cycleSpeed() {
     const cur = SPEEDS.indexOf(speed);
@@ -656,12 +687,28 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
             ⏮
           </button>
           <button
+            className="skip skip-secs"
+            onClick={() => skip(-15)}
+            aria-label="Back 15 seconds"
+            disabled={preparing || !!prepError}
+          >
+            <SkipIcon amount={15} />
+          </button>
+          <button
             className="play"
             onClick={toggle}
             disabled={preparing || !!prepError}
             aria-label={playing ? 'Pause' : 'Play'}
           >
             {playing ? '❚❚' : '▶'}
+          </button>
+          <button
+            className="skip skip-secs"
+            onClick={() => skip(30)}
+            aria-label="Forward 30 seconds"
+            disabled={preparing || !!prepError}
+          >
+            <SkipIcon amount={30} forward />
           </button>
           <button
             className="skip"

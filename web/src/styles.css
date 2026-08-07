@@ -943,7 +943,13 @@ input[type='range']::-moz-range-thumb {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 22px;
+  gap: 12px;
+}
+
+.skip-secs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .speed,
