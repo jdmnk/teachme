@@ -10,6 +10,19 @@ import { Chevron } from './Chevron';
 
 const SPEEDS = [1, 1.25, 1.5, 1.75, 2];
 
+const Icon = ({ d, size = 26 }: { d: string; size?: number }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
+    <path fill="currentColor" d={d} />
+  </svg>
+);
+
+const GLYPH = {
+  prev: 'M6 6h2v12H6zm3.5 6l8.5 6V6z',
+  next: 'M6 18l8.5-6L6 6v12zm10-12h2v12h-2z',
+  play: 'M8 5v14l11-7z',
+  pause: 'M6 19h4V5H6v14zm8-14v14h4V5h-4z',
+};
+
 function SkipIcon({ amount, forward }: { amount: number; forward?: boolean }) {
   // Material 'replay' glyph (arrow top-left, pointing left) for back;
   // its exact mirror is the standard forward glyph
@@ -673,7 +686,7 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
             {speed}×
           </button>
           <button className="skip" onClick={prev} aria-label="Previous" disabled={preparing}>
-            ⏮
+            <Icon d={GLYPH.prev} />
           </button>
           <button
             className="skip skip-secs"
@@ -689,7 +702,7 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
             disabled={preparing || !!prepError}
             aria-label={playing ? 'Pause' : 'Play'}
           >
-            {playing ? '❚❚' : '▶'}
+            <Icon d={playing ? GLYPH.pause : GLYPH.play} size={32} />
           </button>
           <button
             className="skip skip-secs"
@@ -705,7 +718,7 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
             aria-label="Next"
             disabled={idx + 1 >= thread.sections.length}
           >
-            ⏭
+            <Icon d={GLYPH.next} />
           </button>
           <span className="speed-spacer" />
         </div>

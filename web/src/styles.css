@@ -975,9 +975,11 @@ input[type='range']::-moz-range-thumb {
 }
 
 .skip {
-  font-size: 1.35rem;
   color: var(--text);
   padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .skip:disabled {
