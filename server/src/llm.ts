@@ -66,18 +66,41 @@ async function openrouterText(system: string, user: string, model: string): Prom
   return body.choices?.[0]?.message?.content ?? '';
 }
 
-async function chatJSON(opt: ModelOption, system: string, user: string): Promise<any> {
-  const text =
-    opt.engine === 'codex'
-      ? await codexText(
-          `${system}\n\n${user}\n\nReturn ONLY the JSON object — no prose, no code fences, no tool use.`,
-          opt.model,
-          opt.effort ?? 'low',
-        )
-      : await openrouterText(system, user, opt.model);
-  const match = text.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error(`no JSON in model output: ${text.slice(0, 200)}`);
-  return JSON.parse(match[0]);
+const ATTEMPTS = 3;
+
+/**
+ * One generation = up to 3 fresh completions. Models occasionally return
+ * prose around (or instead of) the JSON, truncate it, or the API hiccups —
+ * all transient, so retry with backoff before surfacing anything. `validate`
+ * runs inside the loop so shape problems retry too, not just parse errors.
+ */
+async function chatJSON<T>(
+  opt: ModelOption,
+  system: string,
+  user: string,
+  validate: (out: any) => T,
+): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
+    try {
+      const text =
+        opt.engine === 'codex'
+          ? await codexText(
+              `${system}\n\n${user}\n\nReturn ONLY the JSON object — no prose, no code fences, no tool use.`,
+              opt.model,
+              opt.effort ?? 'low',
+            )
+          : await openrouterText(system, user, opt.model);
+      const match = text.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error(`no JSON in model output: ${text.slice(0, 200)}`);
+      return validate(JSON.parse(match[0]));
+    } catch (err) {
+      lastErr = err;
+      console.error(`chatJSON ${opt.id} attempt ${attempt}/${ATTEMPTS}:`, (err as Error).message);
+      if (attempt < ATTEMPTS) await new Promise((r) => setTimeout(r, attempt * 1500));
+    }
+  }
+  throw lastErr;
 }
 
 const OUTLINE_SYSTEM = `You plan spoken audio learning series — think of a sharp, engaging podcast miniseries that teaches one topic to a curious adult, listened to on the go. Respond with JSON only.`;
@@ -86,7 +109,7 @@ export async function generateOutline(
   topic: string,
   modelId?: string,
 ): Promise<{ title: string; sections: { title: string; focus: string }[] }> {
-  const out = await chatJSON(
+  return chatJSON(
     resolveModel(modelId),
     OUTLINE_SYSTEM,
     `Topic requested by the listener: "${topic}"
@@ -96,10 +119,12 @@ Design the series. Arc: start with a hook/overview episode that makes the topic 
 Section titles must be plainly descriptive, like textbook headings: state exactly what the section covers so a listener scanning the list knows what's inside (e.g. "How attention weighs each word", not "Inside the Language Machine"). No clever, poetic, editorial or book-chapter titles.
 
 Return JSON: {"title": "<short series title, no 'Episode'/'Series' words>", "sections": [{"title": "<plain descriptive section title>", "focus": "<1 sentence: exactly what this section covers and why it comes here>"}]}`,
+    (out) => {
+      if (!out.title || !Array.isArray(out.sections) || out.sections.length < 2)
+        throw new Error('bad outline shape');
+      return out as { title: string; sections: { title: string; focus: string }[] };
+    },
   );
-  if (!out.title || !Array.isArray(out.sections) || out.sections.length < 2)
-    throw new Error('bad outline shape');
-  return out;
 }
 
 const SCRIPT_SYSTEM = `You write scripts for a spoken audio learning series, read verbatim by a text-to-speech voice. You are a brilliant teacher: concrete, vivid, zero fluff, genuinely engaging — like the best explainer podcasts. Respond with JSON only.`;
@@ -123,7 +148,7 @@ export async function generateScript(
     .join('\n');
   const isLast = idx === thread.sections.length - 1;
 
-  const out = await chatJSON(
+  return chatJSON(
     resolveModel(thread.modelId),
     SCRIPT_SYSTEM,
     `Series: "${thread.title}" — about: ${thread.topic}
@@ -145,9 +170,11 @@ Hard rules for the script:
 - Concrete examples over abstractions; one or two rhetorical questions max.
 
 Return JSON: {"script": "<the script>", "summary": "<one line: what this section established>"}`,
+    (out) => {
+      if (!out.script || !out.summary) throw new Error('bad script shape');
+      return out as { script: string; summary: string };
+    },
   );
-  if (!out.script || !out.summary) throw new Error('bad script shape');
-  return out;
 }
 
 export async function replanRemaining(
@@ -159,7 +186,7 @@ export async function replanRemaining(
     .slice(0, keepThrough + 1)
     .map((s, i) => `${i + 1}. ${s.title}${s.summary ? ` — ${s.summary}` : ''}`)
     .join('\n');
-  const out = await chatJSON(
+  return chatJSON(
     resolveModel(thread.modelId),
     OUTLINE_SYSTEM,
     `An audio learning series "${thread.title}" about "${thread.topic}" is mid-flight. Sections already heard (fixed, do not change):
@@ -170,8 +197,10 @@ The listener just said: "${instruction}"
 Replan only the REMAINING sections (2 to 7 of them) so the series honors this. If it's a question, the very next section should answer it directly, then continue the arc. Keep the series coherent and still end with a recap. Section titles must be plainly descriptive, like textbook headings — no clever or editorial titles.
 
 Return JSON: {"sections": [{"title": "...", "focus": "..."}]}`,
+    (out) => {
+      if (!Array.isArray(out.sections) || out.sections.length < 1)
+        throw new Error('bad replan shape');
+      return out.sections as { title: string; focus: string }[];
+    },
   );
-  if (!Array.isArray(out.sections) || out.sections.length < 1)
-    throw new Error('bad replan shape');
-  return out.sections;
 }
