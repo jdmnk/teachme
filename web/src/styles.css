@@ -943,18 +943,24 @@ input[type='range']::-moz-range-thumb {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 8px;
+}
+
+/* 7 fixed-size controls: nothing may flex-shrink or play gets squished */
+.controls > * {
+  flex: none;
 }
 
 .skip-secs {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 6px;
 }
 
 .speed,
 .speed-spacer {
-  width: 48px;
+  width: 42px;
   flex: none;
   text-align: center;
 }
@@ -969,9 +975,9 @@ input[type='range']::-moz-range-thumb {
 }
 
 .skip {
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   color: var(--text);
-  padding: 8px;
+  padding: 6px;
 }
 
 .skip:disabled {
@@ -979,8 +985,8 @@ input[type='range']::-moz-range-thumb {
 }
 
 .play {
-  width: 66px;
-  height: 66px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   background: var(--accent);
   color: var(--accent-ink);

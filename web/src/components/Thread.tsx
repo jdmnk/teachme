@@ -11,27 +11,16 @@ import { Chevron } from './Chevron';
 const SPEEDS = [1, 1.25, 1.5, 1.75, 2];
 
 function SkipIcon({ amount, forward }: { amount: number; forward?: boolean }) {
+  // Material 'replay' glyph (arrow top-left, pointing left) for back;
+  // its exact mirror is the standard forward glyph
   return (
-    <svg viewBox="0 0 24 24" width="27" height="27" aria-hidden="true">
-      <g
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        transform={forward ? 'scale(-1 1) translate(-24 0)' : undefined}
-      >
-        <path d="M12 4A8 8 0 1 0 20 12" />
-        <path d="M15.2 1.8 12 4l3.3 2.2" />
-      </g>
-      <text
-        x="12"
-        y="15.4"
-        textAnchor="middle"
-        fontSize="7.6"
-        fontWeight="700"
+    <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+      <path
         fill="currentColor"
-      >
+        transform={forward ? 'scale(-1 1) translate(-24 0)' : undefined}
+        d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"
+      />
+      <text x="12" y="15.6" textAnchor="middle" fontSize="6.8" fontWeight="700" fill="currentColor">
         {amount}
       </text>
     </svg>
