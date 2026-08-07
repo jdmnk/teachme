@@ -430,12 +430,34 @@ input {
   white-space: nowrap;
 }
 
+.thread-sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.thread-model {
+  flex: none;
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 600;
+  border: 1px solid rgba(240, 180, 91, 0.35);
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+
 .thread-topic {
   color: var(--dim);
   font-size: 0.78rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.fill {
+  flex: 1;
 }
 
 .sections-toggle {

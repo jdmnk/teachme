@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ApiError, Thread, api, beaconPosition } from '../lib/api';
+import { ApiError, ModelOption, Thread, api, beaconPosition } from '../lib/api';
 import {
   activeFromTimings,
   activeSentence,
@@ -34,6 +34,12 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
   const [expanded, setExpanded] = useState<string | null>(null);
   const [titleDraft, setTitleDraft] = useState<string | null>(null);
   const [showSections, setShowSections] = useState(false);
+  const [showText, setShowText] = useState(() => localStorage.getItem('tm_show_text') !== '0');
+  const [models, setModels] = useState<ModelOption[]>([]);
+
+  useEffect(() => {
+    api.models().then(setModels).catch(() => {});
+  }, []);
   const activeSentenceRef = useRef<HTMLSpanElement | null>(null);
   const scrollSuppress = useRef(0);
 
@@ -392,7 +398,15 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
         </button>
         <div className="thread-header-text">
           <div className="thread-title">{thread.title}</div>
-          <div className="thread-topic">{thread.topic}</div>
+          <div className="thread-sub">
+            {models.length > 0 && (
+              <span className="thread-model">
+                {models.find((m) => m.id === (thread.modelId ?? 'default'))?.label ??
+                  thread.modelId}
+              </span>
+            )}
+            <span className="thread-topic">{thread.topic}</span>
+          </div>
         </div>
       </header>
 
@@ -513,6 +527,20 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
       </ol>
       )}
 
+      <button
+        className="sections-toggle"
+        onClick={() =>
+          setShowText((s) => {
+            localStorage.setItem('tm_show_text', s ? '0' : '1');
+            return !s;
+          })
+        }
+      >
+        Text
+        <Chevron open={showText} />
+      </button>
+      {!showText && <div className="fill" />}
+      {showText && (
       <div
         className="reading"
         onWheel={() => (scrollSuppress.current = Date.now() + 5000)}
@@ -545,6 +573,7 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
           <p className="reading-hint">{section?.focus ?? ''}</p>
         )}
       </div>
+      )}
 
       {steered && <div className="toast">Got it — the series bends from the next section on.</div>}
 
