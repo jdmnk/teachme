@@ -1,12 +1,29 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { LevelOption, ModelOption, Thread, api } from '../lib/api';
-import { Chevron } from './Chevron';
+import { seriesHue } from '../lib/cover';
+import { Cover } from './Cover';
+import { Sheet } from './Sheet';
 
 const PLANNING_LINES = [
   'Planning your series…',
   'Sketching the arc…',
   'Naming the sections…',
   'Cueing the narrator…',
+];
+
+const STARTERS = [
+  'the fall of Rome',
+  'how transformers work',
+  'why bridges stand up',
+  'wine tasting',
+  'interest rates',
+  'the metric system',
+  'negotiation',
+  'how vaccines work',
+  'the physics of climbing',
+  'chess engines',
+  'sourdough',
+  'black holes',
 ];
 
 function PlanningOverlay({ topic }: { topic: string }) {
@@ -16,13 +33,11 @@ function PlanningOverlay({ topic }: { topic: string }) {
     return () => clearInterval(iv);
   }, []);
   return (
-    <div className="overlay">
-      <span className="eq eq-big">
-        <i />
-        <i />
-        <i />
-      </span>
-      <div className="overlay-topic">“{topic}”</div>
+    <div className="overlay" style={{ ['--h' as string]: seriesHue(topic) }}>
+      <div className="overlay-art">
+        <Cover seed={topic} />
+      </div>
+      <div className="overlay-topic">{topic}</div>
       <div className="overlay-line pulse">{PLANNING_LINES[line]}</div>
     </div>
   );
@@ -35,9 +50,16 @@ export function Home({ openThread }: { openThread: (id: string) => void }) {
   const [err, setErr] = useState<string | null>(null);
   const [models, setModels] = useState<ModelOption[]>([]);
   const [modelId, setModelId] = useState(() => localStorage.getItem('tm_model') || 'default');
-  const [showModel, setShowModel] = useState(false);
   const [levels, setLevels] = useState<LevelOption[]>([]);
   const [level, setLevel] = useState('balanced');
+  const [sheet, setSheet] = useState<'level' | 'model' | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // fresh suggestions each visit, so the starters never feel like fixed furniture
+  const starters = useMemo(
+    () => [...STARTERS].sort(() => Math.random() - 0.5).slice(0, 3),
+    [],
+  );
 
   useEffect(() => {
     api.threads().then(setThreads).catch(() => setThreads([]));
@@ -67,16 +89,29 @@ export function Home({ openThread }: { openThread: (id: string) => void }) {
     setThreads((ts) => ts?.filter((t) => t.id !== id) ?? null);
   }
 
+  const levelLabel = levels.find((l) => l.id === level)?.label ?? 'Balanced';
+  const modelLabel = models.find((m) => m.id === modelId)?.label ?? 'Default';
+
   return (
     <div className="home">
-      <div className="wordmark home-wordmark">
-        Teach<span>Me</span>
-      </div>
+      <header className="home-top">
+        <span className="wordmark">TeachMe</span>
+        {threads && threads.length > 0 && (
+          <span className="count">{threads.length} series</span>
+        )}
+      </header>
+
+      <h1 className="hero">
+        What do you
+        <br />
+        want to learn?
+      </h1>
 
       <form className="topic-form" onSubmit={create}>
         <input
+          ref={inputRef}
           type="text"
-          placeholder="What do you want to learn?"
+          placeholder="Type a topic…"
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
           disabled={creating}
@@ -86,100 +121,121 @@ export function Home({ openThread }: { openThread: (id: string) => void }) {
           {creating ? <span className="spinner" /> : '→'}
         </button>
       </form>
-      {levels.length > 0 && (
-        <div className="level-box">
-          <div className="level-label">How well do you know the topic?</div>
-          <div className="level-chips">
-            {levels.map((l) => (
-              <button
-                type="button"
-                key={l.id}
-                className={`chip${l.id === level ? ' selected' : ''}`}
-                onClick={() => setLevel(l.id)}
-                disabled={creating}
-              >
-                {l.label}
-              </button>
-            ))}
-          </div>
-          <div className="level-note">{levels.find((l) => l.id === level)?.note}</div>
-        </div>
-      )}
 
-      {models.length > 0 && (
-        <div className="model-box">
+      <div className="starters">
+        {starters.map((s) => (
           <button
+            key={s}
             type="button"
-            className="model-toggle"
-            onClick={() => setShowModel((s) => !s)}
+            className="chip"
+            onClick={() => {
+              setTopic(s);
+              inputRef.current?.focus();
+            }}
+            disabled={creating}
           >
-            Model: <strong>{(models.find((m) => m.id === modelId) ?? models[0]).label}</strong>
-            <Chevron open={showModel} />
+            {s}
           </button>
-          {showModel && (
-            <div className="model-list">
-              {models.map((m) => (
-                <button
-                  type="button"
-                  key={m.id}
-                  className={`model-option ${m.id === modelId ? 'selected' : ''}`}
-                  onClick={() => {
-                    setModelId(m.id);
-                    localStorage.setItem('tm_model', m.id);
-                    setShowModel(false);
-                  }}
-                >
-                  <span className="model-name">{m.label}</span>
-                  <span className="model-meta">
-                    {m.note}
-                    {m.price ? ` · ${m.price} tokens` : ''}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-      {creating && <PlanningOverlay topic={topic.trim()} />}
+        ))}
+      </div>
+
+      <div className="opts">
+        <button type="button" className="opt" onClick={() => setSheet('level')} disabled={creating}>
+          {levelLabel} <span className="cv">▾</span>
+        </button>
+        <button type="button" className="opt" onClick={() => setSheet('model')} disabled={creating}>
+          {modelLabel} <span className="cv">▾</span>
+        </button>
+      </div>
+
       {err && <p className="error-text">{err}</p>}
 
       {threads && threads.length > 0 && (
-        <div className="thread-list">
-          <h2>Continue listening</h2>
-          {threads.map((t) => {
-            const done = t.position.section + 1;
-            return (
-              <div key={t.id} className="thread-card" onClick={() => openThread(t.id)}>
-                <div className="thread-card-main">
-                  <div className="thread-card-title">{t.title}</div>
-                  <div className="thread-card-sub">
-                    Section {done} of {t.sections.length}
-                  </div>
-                  <div className="progress">
-                    <div
-                      className="progress-fill"
-                      style={{ width: `${(done / t.sections.length) * 100}%` }}
-                    />
-                  </div>
-                </div>
-                <button
-                  className="ghost-btn"
-                  aria-label="Delete"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    remove(t.id);
-                  }}
+        <section className="shelf">
+          <h2>Your shelf</h2>
+          <div className="rows">
+            {threads.map((t) => {
+              const done = t.position.section + 1;
+              const finished = done >= t.sections.length;
+              return (
+                <div
+                  key={t.id}
+                  className="row"
+                  style={{ ['--h' as string]: seriesHue(t.topic) }}
+                  onClick={() => openThread(t.id)}
                 >
-                  ✕
-                </button>
-              </div>
-            );
-          })}
-        </div>
+                  <Cover seed={t.topic} />
+                  <div className="meta">
+                    <b>{t.title}</b>
+                    <s>
+                      {finished ? `Finished · ${t.sections.length} sections` : `Section ${done} of ${t.sections.length}`}
+                    </s>
+                    <div className="progress">
+                      <i style={{ width: `${(done / t.sections.length) * 100}%` }} />
+                    </div>
+                  </div>
+                  <button
+                    className="ghost-btn"
+                    aria-label="Delete series"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      remove(t.id);
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </section>
       )}
+
       {threads && threads.length === 0 && !creating && (
-        <p className="hint">Type anything — the fall of Rome, how transformers work, wine tasting basics — and press go.</p>
+        <p className="hint">Pick one above, or type anything at all — it becomes a spoken series in about a minute.</p>
       )}
+
+      {sheet === 'level' && (
+        <Sheet title="How well do you know the topic?" onClose={() => setSheet(null)}>
+          {levels.map((l) => (
+            <button
+              key={l.id}
+              className={`sheet-opt${l.id === level ? ' selected' : ''}`}
+              onClick={() => {
+                setLevel(l.id);
+                setSheet(null);
+              }}
+            >
+              <b>{l.label}</b>
+              <s>{l.note}</s>
+            </button>
+          ))}
+        </Sheet>
+      )}
+
+      {sheet === 'model' && (
+        <Sheet title="Which model writes it?" onClose={() => setSheet(null)}>
+          {models.map((m) => (
+            <button
+              key={m.id}
+              className={`sheet-opt${m.id === modelId ? ' selected' : ''}`}
+              onClick={() => {
+                setModelId(m.id);
+                localStorage.setItem('tm_model', m.id);
+                setSheet(null);
+              }}
+            >
+              <b>{m.label}</b>
+              <s>
+                {m.note}
+                {m.price ? ` · ${m.price} tokens` : ''}
+              </s>
+            </button>
+          ))}
+        </Sheet>
+      )}
+
+      {creating && <PlanningOverlay topic={topic.trim()} />}
     </div>
   );
 }

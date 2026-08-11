@@ -7,6 +7,8 @@ import {
   splitSentences,
 } from '../lib/sentences';
 import { Chevron } from './Chevron';
+import { Cover } from './Cover';
+import { seriesHue } from '../lib/cover';
 
 const SPEEDS = [1, 1.25, 1.5, 1.75, 2];
 
@@ -426,11 +428,12 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
   if (!thread) return <div className="center-fill" />;
 
   return (
-    <div className="thread">
+    <div className="thread" style={{ ['--h' as string]: seriesHue(thread.topic) }}>
       <header className="thread-header">
         <button className="ghost-btn back" onClick={onBack} aria-label="Back">
           ‹
         </button>
+        <Cover seed={thread.topic} className="cover-sm" />
         <div className="thread-header-text">
           <div className="thread-title">{thread.title}</div>
           <div className="thread-sub">
@@ -445,7 +448,6 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
                 {levels.find((l) => l.id === thread.level)?.label ?? thread.level}
               </span>
             )}
-            <span className="thread-topic">{thread.topic}</span>
           </div>
         </div>
       </header>
@@ -579,7 +581,15 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
         Text
         <Chevron open={showText} />
       </button>
-      {!showText && <div className="fill" />}
+      {!showText && (
+        <div className="art-stage">
+          <Cover seed={thread.topic} className="cover-xl" />
+          <div className="art-title">{section?.title}</div>
+          <div className="art-sub">
+            Section {idx + 1} of {thread.sections.length}
+          </div>
+        </div>
+      )}
       {showText && (
       <div
         className="reading"
