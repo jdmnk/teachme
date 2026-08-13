@@ -6,6 +6,7 @@ import {
   sentenceStartTime,
   splitSentences,
 } from '../lib/sentences';
+import { useDictation } from '../lib/useDictation';
 import { Chevron } from './Chevron';
 import { Cover } from './Cover';
 import { seriesHue } from '../lib/cover';
@@ -62,10 +63,10 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
   const [steerText, setSteerText] = useState('');
   const [steering, setSteering] = useState(false);
   const [steered, setSteered] = useState(false);
-  const [listening, setListening] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [titleDraft, setTitleDraft] = useState<string | null>(null);
   const [showSections, setShowSections] = useState(false);
+  const mic = useDictation(setSteerText);
   const [showText, setShowText] = useState(() => localStorage.getItem('tm_show_text') !== '0');
   const [models, setModels] = useState<ModelOption[]>([]);
   const [levels, setLevels] = useState<LevelOption[]>([]);
@@ -80,7 +81,6 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
   const audioRef = useRef<HTMLAudioElement>(null);
   const wantPlay = useRef(false);
   const pendingSeek = useRef<number | null>(null);
-  const recRef = useRef<any>(null);
   const idxRef = useRef(idx);
   idxRef.current = idx;
 
@@ -318,32 +318,6 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
     }
   }
 
-  function toggleMic() {
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) {
-      alert('Voice input is not supported in this browser — type instead.');
-      return;
-    }
-    if (recRef.current) {
-      recRef.current.stop();
-      return;
-    }
-    const rec = new SR();
-    recRef.current = rec;
-    rec.lang = 'en-US';
-    rec.interimResults = true;
-    rec.onresult = (ev: any) => {
-      const text = Array.from(ev.results).map((r: any) => r[0].transcript).join(' ');
-      setSteerText(text);
-    };
-    rec.onend = () => {
-      recRef.current = null;
-      setListening(false);
-    };
-    rec.onerror = rec.onend;
-    setListening(true);
-    rec.start();
-  }
 
   const section = thread?.sections[idx];
   const sentences = useMemo(
@@ -630,12 +604,12 @@ export function ThreadView({ threadId, onBack }: { threadId: string; onBack: () 
       <form className="steer" onSubmit={submitSteer}>
         <button
           type="button"
-          className={`mic ${listening ? 'listening' : ''}`}
-          onClick={toggleMic}
-          aria-label={listening ? 'Stop recording' : 'Speak'}
+          className={`mic ${mic.listening ? 'listening' : ''}`}
+          onClick={mic.toggle}
+          aria-label={mic.listening ? 'Stop recording' : 'Speak'}
         >
           <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" aria-hidden="true">
-            {listening ? (
+            {mic.listening ? (
               <rect x="7" y="7" width="10" height="10" rx="2" />
             ) : (
               <>

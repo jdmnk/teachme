@@ -67,6 +67,8 @@ export const api = {
     req<{ ok: boolean }>('/api/login', { method: 'POST', body: JSON.stringify({ code }) }),
   models: () => req<ModelOption[]>('/api/models'),
   levels: () => req<LevelOption[]>('/api/levels'),
+  suggestions: () =>
+    req<{ topics: string[]; from: 'library' | 'starters' }>('/api/suggestions'),
   threads: () => req<Thread[]>('/api/threads'),
   thread: (id: string) => req<Thread>(`/api/threads/${id}`),
   createThread: (topic: string, modelId: string, level: string) =>

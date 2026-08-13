@@ -1,29 +1,23 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { LevelOption, ModelOption, Thread, api } from '../lib/api';
 import { seriesHue } from '../lib/cover';
+import { useDictation } from '../lib/useDictation';
+import { Chevron } from './Chevron';
 import { Cover } from './Cover';
 import { Sheet } from './Sheet';
+
+const Sparkle = () => (
+  <svg className="spark" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M11 2.5l1.85 5.4 5.4 1.85-5.4 1.85L11 17l-1.85-5.4-5.4-1.85 5.4-1.85z" />
+    <path d="M18.2 14.6l.78 2.27 2.27.78-2.27.78-.78 2.27-.78-2.27-2.27-.78 2.27-.78z" opacity="0.65" />
+  </svg>
+);
 
 const PLANNING_LINES = [
   'Planning your series…',
   'Sketching the arc…',
   'Naming the sections…',
   'Cueing the narrator…',
-];
-
-const STARTERS = [
-  'the fall of Rome',
-  'how transformers work',
-  'why bridges stand up',
-  'wine tasting',
-  'interest rates',
-  'the metric system',
-  'negotiation',
-  'how vaccines work',
-  'the physics of climbing',
-  'chess engines',
-  'sourdough',
-  'black holes',
 ];
 
 function PlanningOverlay({ topic }: { topic: string }) {
@@ -53,18 +47,16 @@ export function Home({ openThread }: { openThread: (id: string) => void }) {
   const [levels, setLevels] = useState<LevelOption[]>([]);
   const [level, setLevel] = useState('balanced');
   const [sheet, setSheet] = useState<'level' | 'model' | null>(null);
+  const [starters, setStarters] = useState<string[] | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // fresh suggestions each visit, so the starters never feel like fixed furniture
-  const starters = useMemo(
-    () => [...STARTERS].sort(() => Math.random() - 0.5).slice(0, 3),
-    [],
-  );
+  const mic = useDictation(setTopic);
 
   useEffect(() => {
     api.threads().then(setThreads).catch(() => setThreads([]));
     api.models().then(setModels).catch(() => {});
     api.levels().then(setLevels).catch(() => {});
+    // suggestions are derived from the library, so they arrive a beat later
+    api.suggestions().then((s) => setStarters(s.topics)).catch(() => setStarters([]));
   }, []);
 
   async function create(e: React.FormEvent) {
@@ -108,43 +100,62 @@ export function Home({ openThread }: { openThread: (id: string) => void }) {
       </h1>
 
       <form className="topic-form" onSubmit={create}>
-        <input
-          ref={inputRef}
-          type="text"
-          placeholder="Type a topic…"
-          value={topic}
-          onChange={(e) => setTopic(e.target.value)}
-          disabled={creating}
-          enterKeyHint="go"
-        />
+        <div className="field">
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder={mic.listening ? 'Listening…' : 'Type or say a topic…'}
+            value={topic}
+            onChange={(e) => setTopic(e.target.value)}
+            disabled={creating}
+            enterKeyHint="go"
+          />
+          {mic.supported && (
+            <button
+              type="button"
+              className={`in-mic${mic.listening ? ' listening' : ''}`}
+              onClick={mic.toggle}
+              disabled={creating}
+              aria-label={mic.listening ? 'Stop listening' : 'Say a topic'}
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3z" />
+                <path d="M17 11a1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V20h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-2.07A7 7 0 0 1 5 11a1 1 0 1 1 2 0 5 5 0 0 0 10 0z" />
+              </svg>
+            </button>
+          )}
+        </div>
         <button type="submit" disabled={!topic.trim() || creating} aria-label="Start">
           {creating ? <span className="spinner" /> : '→'}
         </button>
       </form>
 
       <div className="starters">
-        {starters.map((s) => (
-          <button
-            key={s}
-            type="button"
-            className="chip"
-            onClick={() => {
-              setTopic(s);
-              inputRef.current?.focus();
-            }}
-            disabled={creating}
-          >
-            {s}
-          </button>
-        ))}
+        {starters === null
+          ? [0, 1, 2].map((i) => <span key={i} className="chip skeleton" aria-hidden="true" />)
+          : starters.map((s) => (
+              <button
+                key={s}
+                type="button"
+                className="chip"
+                onClick={() => {
+                  setTopic(s);
+                  inputRef.current?.focus();
+                }}
+                disabled={creating}
+              >
+                <Sparkle />
+                {s}
+              </button>
+            ))}
       </div>
 
       <div className="opts">
         <button type="button" className="opt" onClick={() => setSheet('level')} disabled={creating}>
-          {levelLabel} <span className="cv">▾</span>
+          {levelLabel} <Chevron size={15} />
         </button>
         <button type="button" className="opt" onClick={() => setSheet('model')} disabled={creating}>
-          {modelLabel} <span className="cv">▾</span>
+          {modelLabel} <Chevron size={15} />
         </button>
       </div>
 

@@ -270,13 +270,28 @@ input {
   margin-top: 22px;
 }
 
-.topic-form input {
+.topic-form .field {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r);
-  padding: 17px 18px;
+  padding-right: 6px;
+}
+
+.topic-form .field:focus-within {
+  border-color: #3b3b41;
+}
+
+.topic-form input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  padding: 17px 0 17px 18px;
   outline: none;
   font-size: 16px;
 }
@@ -285,11 +300,30 @@ input {
   color: var(--dim);
 }
 
-.topic-form input:focus {
-  border-color: #3b3b41;
+.in-mic {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border-radius: 50%;
+  color: var(--dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.topic-form button {
+.in-mic:active {
+  background: var(--surface-2);
+}
+
+.in-mic.listening {
+  background: var(--danger);
+  color: #fff;
+  animation: pulse 1.2s infinite;
+}
+
+/* direct child only — the mic lives inside .field and must not inherit the
+   submit button's fill */
+.topic-form > button {
   width: 54px;
   flex: none;
   border-radius: var(--r);
@@ -302,7 +336,7 @@ input {
   justify-content: center;
 }
 
-.topic-form button:disabled {
+.topic-form > button:disabled {
   opacity: 0.32;
 }
 
@@ -314,6 +348,9 @@ input {
 }
 
 .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   font-size: 13px;
   font-weight: 600;
   color: var(--dim);
@@ -326,6 +363,29 @@ input {
 .chip:active {
   background: var(--surface-2);
   color: var(--text);
+}
+
+/* marks the chip as a suggestion rather than something you typed before */
+.spark {
+  flex: none;
+  color: #b98cff;
+  opacity: 0.9;
+}
+
+.chip.skeleton {
+  width: 118px;
+  height: 35px;
+  border-style: dashed;
+  opacity: 0.5;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.chip.skeleton:nth-child(2) {
+  width: 92px;
+}
+
+.chip.skeleton:nth-child(3) {
+  width: 134px;
 }
 
 .opts {
@@ -346,9 +406,9 @@ input {
   padding: 8px 12px;
 }
 
-.opt .cv {
-  font-size: 10px;
+.opt .chev-svg {
   color: var(--dim);
+  margin-right: -2px;
 }
 
 .opt:disabled {

@@ -181,6 +181,35 @@ Return JSON: {"script": "<the script>", "summary": "<one line: what this section
   );
 }
 
+/** Short follow-on topics for the home screen, always on the fast default. */
+export async function suggestTopics(listened: string[]): Promise<string[]> {
+  return chatJSON(
+    resolveModel('default'),
+    'You suggest what a curious person should learn about next. Respond with JSON only.',
+    `Someone has listened to audio learning series on these topics:
+${listened.map((t) => `- ${t}`).join('\n')}
+
+Suggest 3 topics they would likely enjoy next. Each must be a genuinely DIFFERENT subject that
+someone with those interests would find fascinating — a neighbouring field, a surprising
+application, an underlying mechanism from another discipline.
+
+The hard rule: if a suggestion could be described as one of the topics above in different words, or
+as a chapter inside one of them, it is wrong — throw it out and think further afield. Given "the
+history of the metric system", "history of measurement units" is wrong (same subject renamed) and
+"how atomic clocks keep time" is right. Given "how transformers actually work", "attention
+mechanisms" is wrong (a chapter of it) and "how image compression works" is right.
+
+Each topic must be 2 to 6 words, lowercase, no punctuation, phrased the way someone would type it
+into a search box.
+
+Return JSON: {"topics": ["...", "...", "..."]}`,
+    (out) => {
+      if (!Array.isArray(out.topics) || out.topics.length < 1) throw new Error('bad suggestions shape');
+      return out.topics.map((t: unknown) => String(t).trim()).filter(Boolean);
+    },
+  );
+}
+
 export async function replanRemaining(
   thread: Thread,
   keepThrough: number,
