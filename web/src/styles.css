@@ -340,24 +340,38 @@ input {
   opacity: 0.32;
 }
 
+/* one line that scrolls sideways and bleeds past the page padding, so a
+   part-visible chip at the edge signals there is more — three wrapped rows
+   cost far too much of the first screen */
 .starters {
   display: flex;
   gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 12px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  margin: 12px -22px 0;
+  padding: 0 22px;
+}
+
+.starters::-webkit-scrollbar {
+  display: none;
 }
 
 .chip {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  font-size: 13px;
+  gap: 6px;
+  flex: none;
+  white-space: nowrap;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--dim);
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
-  padding: 8px 13px;
+  padding: 8px 12px;
 }
 
 .chip:active {
@@ -368,13 +382,13 @@ input {
 /* marks the chip as a suggestion rather than something you typed before */
 .spark {
   flex: none;
-  color: #b98cff;
-  opacity: 0.9;
+  color: var(--text);
+  opacity: 0.55;
 }
 
 .chip.skeleton {
   width: 118px;
-  height: 35px;
+  height: 34px;
   border-style: dashed;
   opacity: 0.5;
   animation: pulse 1.5s ease-in-out infinite;
