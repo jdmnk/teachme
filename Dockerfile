@@ -8,8 +8,8 @@ COPY web web
 RUN npm run build --workspace=web
 
 FROM node:22-alpine
-# runs as the stock `node` user (uid 1000 = host user) so the bind-mounted
-# CODEX_HOME stays writable for `codex exec` session state
+# runs as the stock `node` user (uid 1000, matches a typical host user) so an
+# optionally bind-mounted CODEX_HOME stays writable for `codex exec` state
 RUN mkdir /data && chown node:node /data
 WORKDIR /app
 ENV NODE_ENV=production

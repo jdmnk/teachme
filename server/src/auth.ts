@@ -37,9 +37,22 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   res.status(401).json({ error: 'unauthorized' });
 }
 
+// Brute-force guard. Client IPs are spoofable behind an unknown proxy chain,
+// so the window is global: this is a single-user app, and a shared cap only
+// ever locks out an attacker (the one real user knows the code).
+const FAIL_WINDOW_MS = 15 * 60_000;
+const MAX_FAILS = 10;
+let fails: number[] = [];
+
 export function login(req: Request, res: Response) {
+  const now = Date.now();
+  fails = fails.filter((t) => now - t < FAIL_WINDOW_MS);
+  if (fails.length >= MAX_FAILS) {
+    return res.status(429).json({ error: 'too many attempts — try again later' });
+  }
   const code = String(req.body?.code ?? '');
   if (!code || !safeEqual(code, config.accessCode)) {
+    fails.push(now);
     return res.status(401).json({ error: 'wrong code' });
   }
   const secure = req.headers['x-forwarded-proto'] === 'https' ? '; Secure' : '';

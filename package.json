@@ -8,6 +8,8 @@
   "scripts": {
     "dev:server": "tsx watch server/src/index.ts",
     "build": "npm run build --workspace=web",
-    "start": "tsx server/src/index.ts"
-  }
+    "start": "tsx server/src/index.ts",
+    "typecheck": "tsc -p server && tsc -p web"
+  },
+  "license": "MIT"
 }

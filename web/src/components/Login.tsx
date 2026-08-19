@@ -1,21 +1,21 @@
 import { useState } from 'react';
-import { api } from '../lib/api';
+import { api, ApiError } from '../lib/api';
 
 export function Login({ onDone }: { onDone: () => void }) {
   const [code, setCode] = useState('');
-  const [err, setErr] = useState(false);
+  const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!code || busy) return;
     setBusy(true);
-    setErr(false);
+    setErr('');
     try {
       await api.login(code);
       onDone();
-    } catch {
-      setErr(true);
+    } catch (e) {
+      setErr(e instanceof ApiError && e.status === 429 ? e.message : 'Wrong code.');
     } finally {
       setBusy(false);
     }
@@ -40,7 +40,7 @@ export function Login({ onDone }: { onDone: () => void }) {
         <button type="submit" disabled={!code || busy}>
           Enter
         </button>
-        {err && <p className="error-text">Wrong code.</p>}
+        {err && <p className="error-text">{err}</p>}
       </form>
     </div>
   );

@@ -10,6 +10,8 @@ export const config = {
   webDist: process.env.WEB_DIST || path.join(root, 'web/dist'),
   accessCode: process.env.ACCESS_CODE || '',
   openrouterKey: process.env.OPENROUTER_API_KEY || '',
+  // optional: your deployment's public URL, sent to OpenRouter for app attribution
+  appUrl: process.env.TEACHME_APP_URL || '',
   model: process.env.TEACHME_MODEL || 'google/gemini-2.5-flash',
   azureSpeechKey: process.env.AZURE_SPEECH_KEY || '',
   azureSpeechRegion: process.env.AZURE_SPEECH_REGION || '',

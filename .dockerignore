@@ -1,0 +1,10 @@
+# keep the build context minimal — and .env out of the docker daemon entirely
+# (the Dockerfile never COPYs it; env reaches the container via env_file)
+.git
+node_modules
+web/dist
+data
+.env
+*.log
+docker-compose.override.yml
+.github

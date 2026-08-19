@@ -1,9 +1,11 @@
 /**
  * Model catalog shown in the UI. Two engines: OpenRouter (pay per token) and
- * the codex CLI (flat subscription, mounted into the container together with
- * CODEX_HOME). Deliberately mid-tier — outline/script writing doesn't need
- * frontier models, and the default Flash has proven good enough.
+ * the optional codex CLI (flat subscription — a logged-in `codex` binary on
+ * PATH, see README). Deliberately mid-tier — outline/script writing doesn't
+ * need frontier models, and the default Flash has proven good enough.
  */
+import fs from 'node:fs';
+import path from 'node:path';
 import { config } from './config.js';
 
 export interface ModelOption {
@@ -25,6 +27,22 @@ export const MODELS: ModelOption[] = [
   { id: 'codex-terra', label: 'Terra', note: 'Codex plan', engine: 'codex', model: 'gpt-5.6-terra', effort: 'medium' },
   { id: 'codex-luna', label: 'Luna', note: 'Codex plan', engine: 'codex', model: 'gpt-5.6-luna', effort: 'medium' },
 ];
+
+// codex models only appear when a `codex` binary is on PATH; existing
+// threads keep resolving codex ids either way (resolveModel scans the full
+// catalog), so nothing breaks if the binary disappears between deploys
+const codexAvailable = (process.env.PATH ?? '')
+  .split(path.delimiter)
+  .some((dir) => {
+    try {
+      fs.accessSync(path.join(dir, 'codex'), fs.constants.X_OK);
+      return true;
+    } catch {
+      return false;
+    }
+  });
+
+const AVAILABLE = MODELS.filter((m) => m.engine !== 'codex' || codexAvailable);
 
 export function resolveModel(id?: string): ModelOption {
   return MODELS.find((m) => m.id === id) ?? MODELS[0];
@@ -58,7 +76,7 @@ async function openrouterPrices(): Promise<Map<string, string>> {
 
 export async function modelsWithPrices(): Promise<(ModelOption & { price?: string })[]> {
   const prices = await openrouterPrices();
-  return MODELS.map((m) =>
+  return AVAILABLE.map((m) =>
     m.engine === 'openrouter' && prices.has(m.model) ? { ...m, price: prices.get(m.model) } : m,
   );
 }

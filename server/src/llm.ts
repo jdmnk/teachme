@@ -49,8 +49,8 @@ async function openrouterText(system: string, user: string, model: string): Prom
     headers: {
       Authorization: `Bearer ${config.openrouterKey}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://teachme.jdmnk.dev',
-      'X-Title': 'TeachMe',
+      // optional OpenRouter app attribution — set TEACHME_APP_URL to your deployment
+      ...(config.appUrl ? { 'HTTP-Referer': config.appUrl, 'X-Title': 'TeachMe' } : {}),
     },
     body: JSON.stringify({
       model,

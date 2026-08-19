@@ -4,20 +4,14 @@ services:
     container_name: teachme-app
     restart: unless-stopped
     env_file: .env
-    environment:
-      # the codex engine shells out to the host's statically-linked codex
-      # binary, billing the existing Codex subscription instead of tokens
-      CODEX_HOME: /codex-home
     volumes:
       - teachme-data:/data
-      - /home/jure/.local/bin/codex:/usr/local/bin/codex:ro
-      - /home/jure/.codex:/codex-home
-    # no host ports: only Caddy reaches the app, over the shared edge network
-    networks: [edge]
-
-networks:
-  edge:
-    external: true
+    # bound to localhost — put a reverse proxy with HTTPS in front (Caddy,
+    # nginx, Traefik) rather than exposing the port directly
+    ports:
+      - '127.0.0.1:3200:3200'
+    # deployment-specific extras (reverse-proxy networks, the optional codex
+    # engine) go in docker-compose.override.yml — see README
 
 volumes:
   teachme-data:
