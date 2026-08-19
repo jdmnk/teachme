@@ -17,7 +17,7 @@ export interface ModelOption {
   id: string;
   label: string;
   note: string;
-  engine: 'openrouter' | 'codex';
+  engine: 'openrouter' | 'codex' | 'claude';
   price?: string;
 }
 

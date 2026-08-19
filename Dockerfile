@@ -1,4 +1,4 @@
-FROM node:22-alpine AS build
+FROM node:22-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY server/package.json server/
@@ -7,9 +7,11 @@ RUN npm ci
 COPY web web
 RUN npm run build --workspace=web
 
-FROM node:22-alpine
-# runs as the stock `node` user (uid 1000, matches a typical host user) so an
-# optionally bind-mounted CODEX_HOME stays writable for `codex exec` state
+FROM node:22-slim
+# slim (glibc), not alpine: the optional agent-CLI engines (codex, claude)
+# are native binaries that don't run on musl. runs as the stock `node` user
+# (uid 1000, matches a typical host user) so optionally bind-mounted CLI
+# homes (CODEX_HOME, CLAUDE_CONFIG_DIR) stay writable for session state
 RUN mkdir /data && chown node:node /data
 WORKDIR /app
 ENV NODE_ENV=production

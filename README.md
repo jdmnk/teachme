@@ -99,29 +99,35 @@ Your instance spends your money, so the access code is the whole wall:
 - Anyone with the code shares one library and one player position per series —
   it's a personal instance, share it like you'd share a Netflix profile.
 
-## Optional: codex engine
+## Optional: agent CLI engines
 
 Besides pay-per-token OpenRouter models, TeachMe can generate scripts through
-the [codex CLI](https://github.com/openai/codex) — billing a flat Codex
-subscription instead of tokens. If a logged-in `codex` binary is on the
-server's PATH, the codex models appear in the model picker automatically;
-otherwise they're hidden.
+agent CLIs — billing their flat subscriptions instead of tokens:
 
-For docker, mount the binary and its home (holding the login state) into the
-container via `docker-compose.override.yml`:
+- **[codex CLI](https://github.com/openai/codex)** — Codex/ChatGPT plan
+- **[Claude Code](https://claude.com/claude-code)** — Claude plan
+
+If a logged-in `codex` or `claude` binary is on the server's PATH, its models
+appear in the model picker automatically; otherwise they're hidden.
+
+For docker, mount the binary and the directory holding its login state into
+the container via `docker-compose.override.yml`:
 
 ```yaml
 services:
   app:
     environment:
       CODEX_HOME: /codex-home
+      CLAUDE_CONFIG_DIR: /claude-home
     volumes:
       - /path/to/codex:/usr/local/bin/codex:ro
       - /home/you/.codex:/codex-home
+      - /path/to/claude:/usr/local/bin/claude:ro
+      - /home/you/.claude:/claude-home
 ```
 
-Support for Claude Code and other agent CLIs as engines is planned — the
-engine layer is a small dispatch in `server/src/llm.ts`.
+Support for more agent CLIs is planned — the engine layer is a small dispatch
+in `server/src/llm.ts`.
 
 ## Configuration
 
@@ -140,8 +146,8 @@ All via `.env` (see `.env.example`):
 
 ## Later
 
-iOS app (the web app is designed mobile-first with that in mind), Claude Code
-and other agent CLIs as engines, live web search via an agent harness backend.
+iOS app (the web app is designed mobile-first with that in mind), more agent
+CLIs as engines, live web search via an agent harness backend.
 
 ## License
 

@@ -1,8 +1,9 @@
 /**
- * Model catalog shown in the UI. Two engines: OpenRouter (pay per token) and
- * the optional codex CLI (flat subscription — a logged-in `codex` binary on
- * PATH, see README). Deliberately mid-tier — outline/script writing doesn't
- * need frontier models, and the default Flash has proven good enough.
+ * Model catalog shown in the UI. Engines: OpenRouter (pay per token) and the
+ * optional agent CLIs — codex and Claude Code — which bill their flat
+ * subscriptions instead (a logged-in binary on PATH, see README).
+ * Deliberately mid-tier — outline/script writing doesn't need frontier
+ * models, and the default Flash has proven good enough.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -12,7 +13,7 @@ export interface ModelOption {
   id: string;
   label: string;
   note: string;
-  engine: 'openrouter' | 'codex';
+  engine: 'openrouter' | 'codex' | 'claude';
   model: string;
   effort?: string;
 }
@@ -26,23 +27,33 @@ export const MODELS: ModelOption[] = [
   { id: 'codex-sol-medium', label: 'Sol · medium', note: 'Codex plan', engine: 'codex', model: 'gpt-5.6-sol', effort: 'medium' },
   { id: 'codex-terra', label: 'Terra', note: 'Codex plan', engine: 'codex', model: 'gpt-5.6-terra', effort: 'medium' },
   { id: 'codex-luna', label: 'Luna', note: 'Codex plan', engine: 'codex', model: 'gpt-5.6-luna', effort: 'medium' },
+  { id: 'cc-fable', label: 'Fable 5', note: 'Claude plan', engine: 'claude', model: 'fable' },
+  { id: 'cc-opus', label: 'Opus 5', note: 'Claude plan', engine: 'claude', model: 'opus' },
+  { id: 'cc-sonnet', label: 'Sonnet 5', note: 'Claude plan', engine: 'claude', model: 'sonnet' },
 ];
 
-// codex models only appear when a `codex` binary is on PATH; existing
-// threads keep resolving codex ids either way (resolveModel scans the full
-// catalog), so nothing breaks if the binary disappears between deploys
-const codexAvailable = (process.env.PATH ?? '')
-  .split(path.delimiter)
-  .some((dir) => {
+// agent-CLI models only appear when their binary is on PATH; existing
+// threads keep resolving these ids either way (resolveModel scans the full
+// catalog), so nothing breaks if a binary disappears between deploys
+const onPath = (bin: string): boolean =>
+  (process.env.PATH ?? '').split(path.delimiter).some((dir) => {
     try {
-      fs.accessSync(path.join(dir, 'codex'), fs.constants.X_OK);
+      fs.accessSync(path.join(dir, bin), fs.constants.X_OK);
       return true;
     } catch {
       return false;
     }
   });
 
-const AVAILABLE = MODELS.filter((m) => m.engine !== 'codex' || codexAvailable);
+const ENGINE_BIN: Partial<Record<ModelOption['engine'], string>> = {
+  codex: 'codex',
+  claude: 'claude',
+};
+
+const AVAILABLE = MODELS.filter((m) => {
+  const bin = ENGINE_BIN[m.engine];
+  return !bin || onPath(bin);
+});
 
 export function resolveModel(id?: string): ModelOption {
   return MODELS.find((m) => m.id === id) ?? MODELS[0];

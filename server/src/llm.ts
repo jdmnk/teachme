@@ -1,9 +1,11 @@
 /**
- * Content generation, dispatched per thread model. Two engines:
+ * Content generation, dispatched per thread model. Three engines:
  * - openrouter: plain chat completion (Gemini Flash default keeps the
  *   outline call fast enough that listening starts within seconds)
  * - codex: shells out to `codex exec` headless, billing the flat Codex
  *   subscription instead of tokens; the final message lands in -o file
+ * - claude: shells out to `claude -p` (Claude Code print mode), billing
+ *   the flat Claude subscription; the response arrives on stdout
  * All calls ask for JSON and parse leniently (models love code fences).
  */
 import { execFile } from 'node:child_process';
@@ -41,6 +43,19 @@ async function codexText(prompt: string, model: string, effort: string): Promise
   } finally {
     void fsp.rm(out, { force: true }).catch(() => {});
   }
+}
+
+async function claudeText(prompt: string, model: string): Promise<string> {
+  const pending = execFileP(
+    'claude',
+    // no MCP servers, no session persistence — one hermetic completion
+    ['-p', '--model', model, '--output-format', 'text', '--strict-mcp-config'],
+    { timeout: 300_000, cwd: os.tmpdir(), maxBuffer: 16 * 1024 * 1024 },
+  );
+  // prompt over stdin (like a pipe) rather than argv
+  pending.child.stdin?.end(prompt);
+  const { stdout } = await pending;
+  return stdout;
 }
 
 async function openrouterText(system: string, user: string, model: string): Promise<string> {
@@ -84,14 +99,13 @@ async function chatJSON<T>(
   let lastErr: unknown;
   for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
     try {
+      const cliPrompt = `${system}\n\n${user}\n\nReturn ONLY the JSON object — no prose, no code fences, no tool use.`;
       const text =
         opt.engine === 'codex'
-          ? await codexText(
-              `${system}\n\n${user}\n\nReturn ONLY the JSON object — no prose, no code fences, no tool use.`,
-              opt.model,
-              opt.effort ?? 'low',
-            )
-          : await openrouterText(system, user, opt.model);
+          ? await codexText(cliPrompt, opt.model, opt.effort ?? 'low')
+          : opt.engine === 'claude'
+            ? await claudeText(cliPrompt, opt.model)
+            : await openrouterText(system, user, opt.model);
       const match = text.match(/\{[\s\S]*\}/);
       if (!match) throw new Error(`no JSON in model output: ${text.slice(0, 200)}`);
       return validate(JSON.parse(match[0]));
