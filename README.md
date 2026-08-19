@@ -2,6 +2,12 @@
 
 [![ci](https://github.com/jdmnk/teachme/actions/workflows/ci.yml/badge.svg)](https://github.com/jdmnk/teachme/actions/workflows/ci.yml) [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+<p align="center">
+  <img src=".github/home.png" width="45%" alt="Home — say a topic, your shelf of series" />
+  &nbsp;
+  <img src=".github/thread.png" width="45%" alt="Player — follow-along transcript, mid-listen steering, podcast controls" />
+</p>
+
 Say a topic, start listening. TeachMe turns anything you want to learn into a
 spoken audio series you can play on the go — skip sections like songs, ask
 questions or steer the direction mid-listen (typed or by voice), and pick up
